@@ -175,6 +175,74 @@ class Lead(object):
         self.spacing = spacing
         self.contacts = OrderedDict()
 
+    def seed_next_contact(self, centered_coordinate):
+        if len(self.contacts) == 0:
+            new_mask = PointMask.centered_proximity_mask(self.point_cloud, centered_coordinate, self.radius)
+            if not new_mask.mask.any():
+                log.debug("Could not find an electrode at {}".format(centered_coordinate))
+                return
+            self.add_contact(new_mask, *self._next_contact_info())
+            return
+
+        last_contact = self.contacts.values()[-1]
+
+        dist = np.linalg.norm(centered_coordinate - last_contact.center)
+
+        if dist < 3 or dist > 35:
+            return
+        else:
+            new_mask = PointMask.centered_proximity_mask(self.point_cloud, centered_coordinate, self.radius)
+            if not new_mask.mask.any():
+                log.debug("Could not find an electrode at {}".format(centered_coordinate))
+                return
+            next_info = self._next_contact_info()
+            if next_info[0] != last_contact.label:
+                next_loc = next_info[1]
+                self.add_contact(new_mask, *next_info)
+                next_coordinate = centered_coordinate + (centered_coordinate - last_contact.center)
+                if next_loc[1] == last_contact.lead_location[1]:
+                    self.seed_next_contact(next_coordinate)
+
+
+    def next_contact_label(self):
+        return self._next_contact_info()[0]
+
+    def next_contact_loc(self):
+        return self._next_contact_info()[1]
+
+    def _next_contact_info(self):
+        if len(self.contacts) == 0:
+            return '1', (1, 1), 1
+
+        last_contact = self.contacts.values()[-1]
+
+        log.debug("Last contact is {}{}".format(self.label, last_contact.label))
+
+        last_label = last_contact.label
+        last_num = int(re.findall(R"\d+", last_label)[-1])
+
+        if last_num == self.dimensions[0] * self.dimensions[1]:
+            log.debug("Last contact in place. Not incrementing")
+            return last_num, last_contact.lead_location, last_contact.lead_group
+
+        last_locs = last_contact.lead_location
+
+        if last_locs[0] >= self.dimensions[0] and last_locs[1] >= self.dimensions[1]:
+            log.debug("Last location in place. Not incrementing")
+            return last_num, last_contact.lead_location, last_contact.lead_group
+
+
+        next_label = last_label.replace(str(last_num), str(last_num+1))
+
+        if last_locs[0] >= self.dimensions[0]:
+            next_locs = 1, last_locs[1]+1
+        else:
+            next_locs = last_locs[0]+1, last_locs[1]
+
+        return next_label, next_locs, last_contact.lead_group
+
+
+
     def interpolate(self):
         groups = set(contact.lead_group for contact in self.contacts.values())
         if self.dimensions[1] > 1:
@@ -330,6 +398,7 @@ class Lead(object):
         if contact_label in self.contacts:
             self.remove_contact(contact_label)
         self.contacts[contact_label] = contact
+        self.last_contact = contact
 
     def remove_contact(self, contact_label):
         del self.contacts[contact_label]
