@@ -22,6 +22,9 @@ from collections import OrderedDict
 log = logging.getLogger()
 log.setLevel(0)
 
+SEEDING = False
+LAST_CONTACT = np.array([0, 0, 0])
+
 
 class PylocControl(object):
     def __init__(self, config=None):
@@ -56,6 +59,12 @@ class PylocControl(object):
         self.selected_lead.interpolate()
         self.view.update_cloud('_leads')
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
+
+    def toggle_seeding(self):
+        global SEEDING
+        SEEDING = not SEEDING
+        global LAST_CONTACT
+        LAST_CONTACT = np.array([0, 0, 0])
 
     def set_lead_location(self, lead_location, lead_group):
         self.lead_location = lead_location
@@ -130,8 +139,29 @@ class PylocControl(object):
             log.debug("Selected coordinate {}".format(self.selected_coordinate))
             self.view.update_slices(self.selected_coordinate)
             self.view.update_ras(self.selected_coordinate)
+            global SEEDING
+            if SEEDING:
+                self.seed_points(self.selected_coordinate)
         else:
             log.debug("No coordinate selected")
+
+    def seed_points(self, centered_coordinate):
+        global LAST_CONTACT
+        print 'Last contact: ', LAST_CONTACT
+        print 'New contact: ', centered_coordinate
+        if LAST_CONTACT[0] != 0:
+            dist = np.linalg.norm(centered_coordinate - LAST_CONTACT)
+            print 'Distance: ', dist
+            if dist < 3 or dist > 35:
+                return
+            else:
+                self.add_selection()
+                new_coordinate = np.add(centered_coordinate, np.subtract(centered_coordinate, LAST_CONTACT))
+                LAST_CONTACT = centered_coordinate
+                self.select_coordinate(new_coordinate)
+        else:
+            LAST_CONTACT = centered_coordinate
+            self.add_selection()
 
     def center_selection(self, iterations, radius):
         for _ in range(iterations):
@@ -350,6 +380,10 @@ class ContactPanelWidget(QtGui.QWidget):
         self.interpolate_button = QtGui.QPushButton("Interpolate")
         layout.addWidget(self.interpolate_button)
 
+        self.seed_button = QtGui.QPushButton("Seeding")
+        self.seed_button.setCheckable(True)
+        layout.addWidget(self.seed_button)
+
         self.assign_callbacks()
 
     def display_coordinate(self, coordinate):
@@ -366,6 +400,7 @@ class ContactPanelWidget(QtGui.QWidget):
         self.lead_group.textChanged.connect(self.lead_location_changed)
         self.interpolate_button.clicked.connect(self.controller.interpolate_selected_lead)
         self.contact_list.currentItemChanged.connect(self.chosen_lead_selected)
+        self.seed_button.clicked.connect(self.controller.toggle_seeding)
 
     LEAD_LOC_REGEX = r'\((\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\)'
 
