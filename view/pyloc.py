@@ -63,6 +63,8 @@ class PylocControl(object):
         self.seeding = not self.seeding
         if self.seeding:
             self.display_seed_contact()
+        else:
+            self.view.display_message("")
 
     def display_seed_contact(self):
         next_label = self.selected_lead.next_contact_label()
@@ -84,7 +86,7 @@ class PylocControl(object):
         try:
             self.selected_lead = self.ct.get_lead(lead_name)
         except KeyError:
-            log.warn("Lead {} does not exist".format(lead_name))
+            log.error("Lead {} does not exist".format(lead_name))
         self.select_next_contact_label()
 
     def prompt_for_ct(self):
@@ -125,6 +127,7 @@ class PylocControl(object):
     def define_leads(self):
         self.lead_window = QtGui.QMainWindow()
         lead_widget = LeadDefinitionWidget(self, self.config, self.view)
+        lead_widget.set_leads(self.ct.get_leads())
         self.lead_window.setCentralWidget(lead_widget)
         self.lead_window.show()
         self.lead_window.resize(200, lead_widget.height())
@@ -133,7 +136,7 @@ class PylocControl(object):
         log.debug("Selecting near coordinate {}".format(coordinate))
         self.clicked_coordinate = coordinate
         self.selected_coordinate = coordinate
-        radius = self.selected_lead.radius if not self.selected_lead is None else 10
+        radius = self.selected_lead.radius if not self.selected_lead is None else 5
         self.ct.select_points_near(coordinate, radius)
         if do_center:
             log.debug("Centering...")
@@ -207,7 +210,7 @@ class PylocControl(object):
 
     def set_leads(self, labels, lead_types, dimensions, radii, spacings):
         self.ct.set_leads(labels, lead_types, dimensions, radii, spacings)
-        self.view.contact_panel.set_lead_labels(labels)
+        self.view.contact_panel.set_lead_labels(self.ct.get_leads().keys())
 
     def delete_contact(self, lead_label, contact_label):
         self.ct.get_lead(lead_label).remove_contact(contact_label)
@@ -412,6 +415,7 @@ class ContactPanelWidget(QtGui.QWidget):
         self.contacts.append((lead, contact))
 
     def set_lead_labels(self, lead_labels):
+        self.label_dropdown.clear()
         for lead_name in lead_labels:
             self.label_dropdown.addItem(lead_name)
 
@@ -491,7 +495,12 @@ class LeadDefinitionWidget(QtGui.QWidget):
         self.controller.lead_window.close()
 
     def set_leads(self, leads):
-        self._leads = OrderedDict(sorted(leads.items()))
+        self._leads = {lead.label:
+                       {"label": lead.label,
+                        "x":lead.dimensions[0],
+                        "y":lead.dimensions[1],
+                        "type":lead.type_}
+                      for lead in leads.values()}
         self.refresh()
 
     def refresh(self):
@@ -693,14 +702,15 @@ class CloudView(object):
 
 if __name__ == '__main__':
     # controller = PylocControl(yaml.load(open(os.path.join(os.path.dirname(__file__) , "../config.yml"))))
-    # controller = PyLocControl('/Users/iped/PycharmProjects/voxTool/R1170J_CT_combined.nii.gz')
+    #controller = PylocControl()
     controller = PylocControl(yaml.load(open(os.path.join(os.path.dirname(__file__), "../config.yml"))))
 
     # controller.load_ct("../T01_R1248P_CT.nii.gz")
-    controller.load_ct('/Volumes/rhino_mount/data10/RAM/subjects/R1226D/tal/images/combined/R1226D_CT_combined.nii.gz')
+    # controller.load_ct('/Volumes/rhino_mount/data10/RAM/subjects/R1226D/tal/images/combined/R1226D_CT_combined.nii.gz')
+    controller.load_ct('/Users/iped/PycharmProjects/voxTool/R1226D_CT_combined.nii.gz')
     controller.set_leads(
         #    ["sA", "sB", "dA", "dB"], ["S", "S", "D", "D"], ([[6, 1]] * 2) + ([[8, 1]] * 2), ([5] * 2) + ([5] * 2), [10] * 4
-        ["GG"], ["G"], ([[4, 8]]), [5], [10]
+        ("G45", "G48"), ("G", "G"), ([4, 5], [4, 8]), [5, 5], [10, 10]
         # ["dA", "dB", "dC"], ["D", "D", "G"], [[8, 1], [8, 1], [4, 4]], [5, 10, 10], [10, 20, 20]
     )
     controller.exec_()

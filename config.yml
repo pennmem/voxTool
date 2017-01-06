@@ -8,11 +8,11 @@ lead_types:
     max_y: 1
   G:
     name: Grid
-    radius: 6
+    radius: 5
     spacing: 20
   S:
     name: Strip
-    radius: 6
+    radius: 5
     spacing: 20
 
 ct_threshold: 99.9

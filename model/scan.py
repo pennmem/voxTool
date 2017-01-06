@@ -122,13 +122,11 @@ class PointMask(object):
     def centered_proximity_mask(point_cloud, point, distance):
         coordinates = point_cloud.get_coordinates()
 
-        mean_dists = 999
         attempts = 0
-        while mean_dists > .5 and attempts < 10:
+        for _ in range(4):
             log.debug("Center attempt {}".format(attempts))
             vector_dist = coordinates - point
             dists = np.sqrt(np.sum(np.square(vector_dist), 1))
-            mean_dists = np.mean(vector_dist[dists < distance, :])
             point = np.mean(coordinates[dists < distance, :], 0)
             attempts += 1
         return PointMask('_proximity', point_cloud, dists < distance)
@@ -176,33 +174,43 @@ class Lead(object):
         self.contacts = OrderedDict()
 
     def seed_next_contact(self, centered_coordinate):
+
+        if self.has_coordinate(centered_coordinate):
+            log.debug("Coordinate {} is already assigned".format(centered_coordinate))
+            return
+
         if len(self.contacts) == 0:
             new_mask = PointMask.centered_proximity_mask(self.point_cloud, centered_coordinate, self.radius)
             if not new_mask.mask.any():
                 log.debug("Could not find an electrode at {}".format(centered_coordinate))
                 return
+            log.debug("Added first contact to {}".format(self.label))
             self.add_contact(new_mask, *self._next_contact_info())
             return
 
         last_contact = self.contacts.values()[-1]
 
-        dist = np.linalg.norm(centered_coordinate - last_contact.center)
-
-        if dist < 3 or dist > 35:
+        new_mask = PointMask.centered_proximity_mask(self.point_cloud, centered_coordinate, self.radius)
+        if not new_mask.mask.any():
+            log.debug("Could not find an electrode at {}".format(centered_coordinate))
             return
-        else:
-            new_mask = PointMask.centered_proximity_mask(self.point_cloud, centered_coordinate, self.radius)
-            if not new_mask.mask.any():
-                log.debug("Could not find an electrode at {}".format(centered_coordinate))
-                return
-            next_info = self._next_contact_info()
-            if next_info[0] != last_contact.label:
-                next_loc = next_info[1]
-                self.add_contact(new_mask, *next_info)
+        next_info = self._next_contact_info()
+        if next_info[0] != last_contact.label:
+            self.add_contact(new_mask, *next_info)
+            dist = np.linalg.norm(centered_coordinate - last_contact.center)
+            _, next_loc, _ = self._next_contact_info()
+            if next_loc[1] == last_contact.lead_location[1]:
+                if dist < 3 or dist > 50:
+                    return
                 next_coordinate = centered_coordinate + (centered_coordinate - last_contact.center)
-                if next_loc[1] == last_contact.lead_location[1]:
-                    self.seed_next_contact(next_coordinate)
+                self.seed_next_contact(next_coordinate)
 
+    def has_coordinate(self, coordinate):
+        centers = [contact.center for contact in self.contacts.values()]
+        for existing_center in centers:
+            if all(abs(existing_center - coordinate) < .5):
+                return True
+        return False
 
     def next_contact_label(self):
         return self._next_contact_info()[0]
@@ -216,20 +224,18 @@ class Lead(object):
 
         last_contact = self.contacts.values()[-1]
 
-        log.debug("Last contact is {}{}".format(self.label, last_contact.label))
-
         last_label = last_contact.label
-        last_num = int(re.findall(R"\d+", last_label)[-1])
+        last_num = int(re.findall(r"\d+", last_label)[-1])
 
         if last_num == self.dimensions[0] * self.dimensions[1]:
             log.debug("Last contact in place. Not incrementing")
-            return last_num, last_contact.lead_location, last_contact.lead_group
+            return last_label, last_contact.lead_location, last_contact.lead_group
 
         last_locs = last_contact.lead_location
 
         if last_locs[0] >= self.dimensions[0] and last_locs[1] >= self.dimensions[1]:
             log.debug("Last location in place. Not incrementing")
-            return last_num, last_contact.lead_location, last_contact.lead_group
+            return last_label, last_contact.lead_location, last_contact.lead_group
 
 
         next_label = last_label.replace(str(last_num), str(last_num+1))
@@ -397,6 +403,8 @@ class Lead(object):
         contact = Contact(point_mask, contact_label, lead_location, lead_group)
         if contact_label in self.contacts:
             self.remove_contact(contact_label)
+        if self.has_coordinate(point_mask.get_center()):
+            log.warning("Coordinates {} already exist. Not adding {}{}".format(point_mask.get_center(), self.label, contact_label))
         self.contacts[contact_label] = contact
         self.last_contact = contact
 
@@ -499,7 +507,7 @@ class CT(object):
         self.from_dict(json.load(open(filename)))
 
     def set_leads(self, labels, lead_types, dimensions, radii, spacings):
-        self._leads.clear()
+        self._leads = OrderedDict()
         for label, lead_type, dimension, radius, spacing in \
                 zip(labels, lead_types, dimensions, radii, spacings):
             log.debug("Adding lead {}, ({} {} {})".format(label, lead_type, dimension, spacing))
