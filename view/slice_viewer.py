@@ -104,7 +104,7 @@ class SliceView(FigureCanvas):
         if self.axis != 2:
             circl_coords[0], circl_coords[1] = circl_coords[0], plotted_image.shape[0] - circl_coords[1]
         else:
-            circl_coords[1] = plotted_image.shape[1] - circl_coords[1]
+            circl_coords[1] = plotted_image.shape[0] - circl_coords[1]
 
         self.circ = plt.Circle(circl_coords, radius=radius, edgecolor='r', fill=False)
         self.axes.add_patch(self.circ)

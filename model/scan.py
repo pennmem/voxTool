@@ -507,11 +507,14 @@ class CT(object):
         self.from_dict(json.load(open(filename)))
 
     def set_leads(self, labels, lead_types, dimensions, radii, spacings):
-        self._leads = OrderedDict()
+        for label in self._leads.keys():
+            if label not in labels:
+                del self._leads[label]
         for label, lead_type, dimension, radius, spacing in \
                 zip(labels, lead_types, dimensions, radii, spacings):
-            log.debug("Adding lead {}, ({} {} {})".format(label, lead_type, dimension, spacing))
-            self._leads[label] = Lead(self._points, label, lead_type, dimension, radius, spacing)
+            if label not in self._leads:
+                log.debug("Adding lead {}, ({} {} {})".format(label, lead_type, dimension, spacing))
+                self._leads[label] = Lead(self._points, label, lead_type, dimension, radius, spacing)
 
     def get_lead(self, lead_name):
         return self._leads[lead_name]

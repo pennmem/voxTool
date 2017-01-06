@@ -153,10 +153,12 @@ class PylocControl(object):
                 self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
                 self.display_seed_contact()
             else:
+                self.view.update_ras(self.selected_coordinate)
                 log.info("Selected coordinate {}".format(self.selected_coordinate))
         else:
             log.info("No coordinate selected")
         self.view.update_cloud('_selected')
+        self.view.update_slices(self.selected_coordinate)
 
     def center_selection(self, iterations, radius):
         for _ in range(iterations):
