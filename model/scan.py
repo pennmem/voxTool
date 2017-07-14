@@ -515,7 +515,7 @@ class CT(object):
         for lead in self._leads.values():
             if lead.micros:
                 micro_contacts = lead.make_micro_contacts()
-                micro_lead = Lead(lead.point_cloud,lead.label+'Micro',lead_type='u'+lead.type_,dimensions=lead.dimensions,
+                micro_lead = Lead(lead.point_cloud,lead.label+'Micro',lead_type=lead.micros['type'],dimensions=lead.dimensions,
                                   micros=lead.micros)
                 for contact_dict in micro_contacts:
                     micro_lead.add_contact(**contact_dict)

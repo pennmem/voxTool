@@ -19,6 +19,7 @@ micro_types:
 # Note: spacing here is defined as the distance in mm from the microcontact to contact 1 of the depth along the lead axis
   None: null
   AdTech_MM16C:
+    type: uD
     spacing:
       - -0.5
       - 0.5
@@ -30,6 +31,7 @@ micro_types:
       - 2
       - 2
   AdTech_MM16D:
+    type: uD
     spacing:
       - -0.5
       - 0.5
@@ -41,6 +43,7 @@ micro_types:
       - 2
       - 2
   PMT:
+    type: uD
     spacing:
       - 0.36
       - 0.63
@@ -51,7 +54,8 @@ micro_types:
       - 4
       - 4
       - 4
-  BF:
+  Behnke_Fried:
+    type: uW
     spacing:
       - 0.0
     numbering:
