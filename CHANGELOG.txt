@@ -1,0 +1,17 @@
+**7-14-2017**
+
+Features
+--------
+
+- Added support for micro-macro leads
+  * micro-contact spacing defined in config.yml
+  * Lead definition includes menu with supported micro-macro leads, or None
+  * "Add Micro-Contacts" button interpolates microcontacts for every lead marked as containing microcontacts
+- Added "Save as vox_mom" button to save localization in old TSV format ('VOX_coords_mother')
+- Renamed "Save coordinates" to "Save as JSON"
+- Delete button in "Define Leads" popup now actually works
+
+Known Issues
+------------
+- "Load configuration" button does not work with micro-macros
+- Main window components out of proportion.

@@ -161,10 +161,28 @@ class Contact(object):
     def lead_location_str(self):
         return '({}, {})'.format(*self.lead_location)
 
+class MicroContact(Contact):
+    """ Microcontacts are not necessarily visible in the CT scan, and so
+    we need to define a contact class that lacks a point mask"""
+    def __init__(self,center,point_cloud,contact_label,lead_location,lead_group):
+        mask = PointMask(contact_label,point_cloud,mask=np.zeros(len(point_cloud)))
+        super(MicroContact, self).__init__(mask,contact_label,lead_location,lead_group)
+        self._center = center
+
+    def __contains__(self, coordinate):
+        return False
+    @property
+    def center(self):
+        return np.round(self._center,1)
+
+    @property
+    def center_str(self):
+        return '({:.1f}, {:.1f}, {:.1f})'.format(*self._center)
+
 
 class Lead(object):
     def __init__(self, point_cloud, lead_label, lead_type='S',
-                 dimensions=(1, 5), radius=4, spacing=10):
+                 dimensions=(1, 5), radius=4, spacing=10,micros=None):
         self.point_cloud = point_cloud
         self.label = lead_label
         self.type_ = lead_type
@@ -172,6 +190,7 @@ class Lead(object):
         self.radius = radius
         self.spacing = spacing
         self.contacts = OrderedDict()
+        self.micros = micros
 
     def seed_next_contact(self, centered_coordinate):
 
@@ -312,7 +331,7 @@ class Lead(object):
     def _interpolate_strip(self, group):
         dims = self.dimensions
         contacts = [contact for contact in self.contacts.values() if contact.lead_group == group]
-        locations = [tuple(contact.lead_location) for contact in contacts]
+        locations = [tuple(contact.lead_location) for contact in contacts if not 'Micro' in contact.label]
         possible_locations = [(i, 1) for i in range(1, dims[0] + 1)]
 
         present = np.array(list(x in locations for x in possible_locations))
@@ -392,6 +411,30 @@ class Lead(object):
             self.add_contact(mask, new_label, grid_coordinate, contact_1.lead_group)
             log.info("Added contact {} at {}".format(new_label, point))
 
+    def make_micro_contacts(self):
+        # All this only works for depth electrodes
+        if self.micros:
+            contact_1 = self.contacts.values()[0]
+            contact_n = self.contacts.values()[1]
+            lead_unit_vector = (contact_n.center - contact_1.center)
+            # Micro-contact positions are in relative units from the center of the last contact
+            micro_nums = iter(xrange(1,1+sum(self.micros['numbering'])))
+            contacts=[]
+            for i,(n_contacts,spacing) in enumerate(zip(self.micros['numbering'],self.micros['spacing'])):
+                micro_center = spacing*lead_unit_vector+contact_1.center
+                for j in range(n_contacts):
+                    lead_location = (float('%s.%s'%(i+1,j+1)),1)
+                    contact_num = str(micro_nums.next())
+                    contacts.append(dict(
+                        center=micro_center,
+                        point_cloud=self.point_cloud,
+                        contact_label=contact_num,
+                        lead_location=lead_location,
+                        lead_group=0))
+            return contacts
+        else:
+            pass
+
     def has_lead_location(self, lead_location, lead_group):
         for contact in self.contacts.values():
             if np.all(contact.lead_location == lead_location):
@@ -399,12 +442,25 @@ class Lead(object):
                     return True
         return False
 
-    def add_contact(self, point_mask, contact_label, lead_location, lead_group):
+    def add_contact(self,*args,**kwargs):
+        if self.type_.startswith('u'):
+            self.add_micro(*args,**kwargs)
+        else:
+            self.add_macro(*args,**kwargs)
+
+    def add_micro(self,center,point_cloud,contact_label,lead_location,lead_group):
+        contact = MicroContact(center,point_cloud,contact_label,lead_location,lead_group)
+        if contact_label in self.contacts:
+            self.remove_contact(contact_label)
+        self.contacts[contact_label]=contact
+        self.last_contact = contact
+
+    def add_macro(self, point_mask, contact_label, lead_location, lead_group):
         contact = Contact(point_mask, contact_label, lead_location, lead_group)
         if contact_label in self.contacts:
             self.remove_contact(contact_label)
         if self.has_coordinate(point_mask.get_center()):
-            log.warning("Coordinates {} already exist. Not adding {}{}".format(point_mask.get_center(), self.label, contact_label))
+            log.warning("Coordinates {} of {}{} already exist.".format(point_mask.get_center(), self.label, contact_label))
         self.contacts[contact_label] = contact
         self.last_contact = contact
 
@@ -455,6 +511,16 @@ class CT(object):
         lead = self._leads[lead_label]
         lead.interpolate()
 
+    def add_micro_contacts(self):
+        for lead in self._leads.values():
+            if lead.micros:
+                micro_contacts = lead.make_micro_contacts()
+                micro_lead = Lead(lead.point_cloud,lead.label+'Micro',lead_type='u'+lead.type_,dimensions=lead.dimensions,
+                                  micros=lead.micros)
+                for contact_dict in micro_contacts:
+                    micro_lead.add_contact(**contact_dict)
+                self._leads[micro_lead.label]=micro_lead
+
     def to_dict(self):
         leads = {}
         for lead in self._leads.values():
@@ -483,13 +549,35 @@ class CT(object):
             origin_ct=self.filename
         )
 
+    def to_vox_mom(self,fname):
+        csv_out = []
+        for lead in sorted(self.get_leads().values(),cmp=lambda x,y:cmp(x.label.upper(),y.label.upper()) ):
+            ltype = lead.type_
+            dims = lead.dimensions
+            for contact in sorted(lead.contacts.keys(),cmp=lambda x,y: cmp(int(x),int(y))):
+                voxel = lead.contacts[contact].center
+                contact_name = lead.label+contact
+                csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
+                    contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]
+                )
+        with open(fname,'w') as vox_mom:
+            vox_mom.writelines(csv_out)
+
+
     def from_dict(self, input_dict):
         leads = input_dict['leads']
         labels = leads.keys()
         types = [leads[label]['type'] for label in labels]
-        dimensions = [leads[label]['dimensions'] for label in labels]
-        radii = [self.config['lead_types'][type_]['radius'] for type_ in types]
-        spacings = [self.config['lead_types'][type_]['spacing'] for type_ in types]
+        try:
+            dimensions = [leads[label]['dimensions'] for label in labels]
+        except KeyError:
+            def get_dimensions(lead):
+                x = max([c['lead_loc'][1] for c in lead['contacts']])
+                y =  max([c['lead_loc'][0] for c in lead['contacts']])
+                return (x+1,y+1)
+            dimensions = [get_dimensions(leads[label]) for label in labels]
+        radii = [self.config['lead_types'][type_]['radius'] for type_ in types ]
+        spacings = [self.config['lead_types'][type_]['spacing'] for type_ in types ]
         self.set_leads(labels, types, dimensions, radii, spacings)
         for i, lead_label in enumerate(labels):
             for contact in leads[lead_label]['contacts']:
@@ -501,20 +589,22 @@ class CT(object):
                 self._leads[lead_label].add_contact(point_mask, contact_label, loc, group)
 
     def to_json(self, filename):
-        json.dump(self.to_dict(), open(filename, 'w'))
+        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
 
     def from_json(self, filename):
         self.from_dict(json.load(open(filename)))
 
-    def set_leads(self, labels, lead_types, dimensions, radii, spacings):
+    def set_leads(self, labels, lead_types, dimensions, radii, spacings,micros=None):
         for label in self._leads.keys():
             if label not in labels:
                 del self._leads[label]
-        for label, lead_type, dimension, radius, spacing in \
-                zip(labels, lead_types, dimensions, radii, spacings):
+        if micros is None:
+            micros = [None for l in labels]
+        for label, lead_type, dimension, radius, spacing,micro in zip(
+                labels, lead_types, dimensions, radii, spacings,micros):
             if label not in self._leads:
                 log.debug("Adding lead {}, ({} {} {})".format(label, lead_type, dimension, spacing))
-                self._leads[label] = Lead(self._points, label, lead_type, dimension, radius, spacing)
+                self._leads[label] = Lead(self._points, label, lead_type, dimension, radius, spacing,micro)
 
     def get_lead(self, lead_name):
         return self._leads[lead_name]

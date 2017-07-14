@@ -55,7 +55,12 @@ class PylocControl(object):
         self.seeding = False
 
     def interpolate_selected_lead(self):
-        self.selected_lead.interpolate()
+        self.ct.interpolate(self.selected_lead.label)
+        self.view.update_cloud('_leads')
+        self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
+
+    def add_micro_contacts(self):
+        self.ct.add_micro_contacts()
         self.view.update_cloud('_leads')
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
 
@@ -110,13 +115,19 @@ class PylocControl(object):
     def assign_callbacks(self):
         self.view.task_bar.load_scan_button.clicked.connect(self.prompt_for_ct)
         self.view.task_bar.define_leads_button.clicked.connect(self.define_leads)
-        self.view.task_bar.save_coord_button.clicked.connect(self.save_coordinates)
+        self.view.task_bar.save_json_button.clicked.connect(self.save_coordinates_json)
+        self.view.task_bar.save_csv_button.clicked.connect(self.save_coordinates_csv)
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
 
-    def save_coordinates(self):
-        file = QtGui.QFileDialog().getSaveFileName(None, 'Select save file', '.', '(*.json)')
-        if file:
-            self.ct.to_json(file)
+    def save_coordinates_json(self):
+        file_ = QtGui.QFileDialog().getSaveFileName(None, 'Select save file', '.', '(*.json)')
+        if file_:
+            self.ct.to_json(file_)
+
+    def save_coordinates_csv(self):
+        file_  = QtGui.QFileDialog().getSaveFileName(None,'Select save file','.','(*.txt)')
+        if file_:
+            self.ct.to_vox_mom(file_)
 
     def load_coordinates(self):
         file = QtGui.QFileDialog().getOpenFileName(None, 'Select voxel_coordinates.json', '.', '(*.json)')
@@ -210,8 +221,8 @@ class PylocControl(object):
         self.view.update_lead_location(*self.lead_location)
         self.view.update_contact_label(self.contact_label)
 
-    def set_leads(self, labels, lead_types, dimensions, radii, spacings):
-        self.ct.set_leads(labels, lead_types, dimensions, radii, spacings)
+    def set_leads(self, labels, lead_types, dimensions, radii, spacings,micros=None):
+        self.ct.set_leads(labels, lead_types, dimensions, radii, spacings,micros)
         self.view.contact_panel.set_lead_labels(self.ct.get_leads().keys())
 
     def delete_contact(self, lead_label, contact_label):
@@ -331,6 +342,9 @@ class ContactPanelWidget(QtGui.QWidget):
         self.seed_button.setCheckable(True)
         layout.addWidget(self.seed_button)
 
+        self.micro_button = QtGui.QPushButton("Add Micro-Contacts")
+        layout.addWidget(self.micro_button)
+
         self.assign_callbacks()
 
     def display_coordinate(self, coordinate):
@@ -348,6 +362,7 @@ class ContactPanelWidget(QtGui.QWidget):
         self.interpolate_button.clicked.connect(self.controller.interpolate_selected_lead)
         self.contact_list.currentItemChanged.connect(self.chosen_lead_selected)
         self.seed_button.clicked.connect(self.controller.toggle_seeding)
+        self.micro_button.clicked.connect(self.controller.add_micro_contacts)
 
     LEAD_LOC_REGEX = r'\((\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\)'
 
@@ -458,6 +473,11 @@ class LeadDefinitionWidget(QtGui.QWidget):
 
         self.add_labeled_widget(layout, "Type: ", self.type_box)
 
+        self.micro_box = QtGui.QComboBox()
+        for micro_lead_type in sorted(config['micro_types'].keys()):
+            self.micro_box.addItem(micro_lead_type)
+        self.add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
+
         self.submit_button = QtGui.QPushButton("Submit")
         self.submit_button.clicked.connect(self.add_current_lead)
         layout.addWidget(self.submit_button)
@@ -469,6 +489,7 @@ class LeadDefinitionWidget(QtGui.QWidget):
         self.delete_button = QtGui.QPushButton("Delete")
         self.close_button = QtGui.QPushButton("Confirm")
         self.close_button.clicked.connect(self.finish)
+        self.delete_button.clicked.connect(self.delete_lead)
 
         bottom_layout.addWidget(self.delete_button)
         bottom_layout.addWidget(self.close_button)
@@ -492,7 +513,8 @@ class LeadDefinitionWidget(QtGui.QWidget):
         dimensions = [(lead['x'], lead['y']) for lead in leads]
         spacings = [self.config['lead_types'][lead_type]['spacing'] for lead_type in types]
         radii = [self.config['lead_types'][lead_type]['radius'] for lead_type in types]
-        self.controller.set_leads(labels, types, dimensions, radii, spacings)
+        micros = [self.config['micro_types'][str(l.get('micro'))] for l in leads]
+        self.controller.set_leads(labels, types, dimensions, radii, spacings,micros)
         self.close()
         self.controller.lead_window.close()
 
@@ -523,12 +545,21 @@ class LeadDefinitionWidget(QtGui.QWidget):
 
         type_str = self.type_box.currentText()
         label_str = str(self.label_edit.text())
+        micro_str = self.micro_box.currentText()
         self._leads[label_str] = dict(
             label=label_str,
             x=int(x_str),
             y=int(y_str),
-            type=type_str[0]
+            type=type_str[0],
+            micro=micro_str,
         )
+        self.refresh()
+
+    def delete_lead(self):
+        lead_str = self.leads_list.currentItem().text()
+        label = lead_str.split()[0]
+        log.debug('Removing lead %s'%label)
+        del self._leads[label]
         self.refresh()
 
     @staticmethod
@@ -547,12 +578,14 @@ class TaskBarLayout(QtGui.QHBoxLayout):
         self.define_leads_button = QtGui.QPushButton("Define Leads")
         self.define_leads_button.setEnabled(False)
         self.load_coord_button = QtGui.QPushButton("Load Coordinates")
-        self.save_coord_button = QtGui.QPushButton("Save Coordinates")
+        self.save_json_button = QtGui.QPushButton("Save as JSON")
+        self.save_csv_button =  QtGui.QPushButton("Save as vox_mom")
         self.clean_button = QtGui.QPushButton("Clean scan")
         self.addWidget(self.load_scan_button)
         self.addWidget(self.define_leads_button)
         self.addWidget(self.load_coord_button)
-        self.addWidget(self.save_coord_button)
+        self.addWidget(self.save_json_button)
+        self.addWidget(self.save_csv_button)
         self.addWidget(self.clean_button)
 
 
