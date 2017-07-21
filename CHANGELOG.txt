@@ -1,3 +1,11 @@
+**Unreleased**
+Features
+--------
+
+- Contact list updates when loading contacts from JSON
+
+
+
 **7-14-2017**
 
 Features
@@ -15,4 +23,3 @@ Known Issues
 ------------
 - "Load configuration" button does not work with micro-macros
 - Main window components out of proportion.
-- Microwires not distinguished from micros on depth

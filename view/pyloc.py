@@ -134,6 +134,7 @@ class PylocControl(object):
         if file:
             self.ct.from_json(file)
             self.view.update_cloud('_leads')
+            self.view.contact_panel.update_contacts()
 
     def define_leads(self):
         self.lead_window = QtGui.QMainWindow()
@@ -430,6 +431,15 @@ class ContactPanelWidget(QtGui.QWidget):
             QtGui.QListWidgetItem(self.config['lead_display'].format(lead=lead, contact=contact).strip())
         )
         self.contacts.append((lead, contact))
+
+    def update_contacts(self):
+        ct = self.controller.ct
+        lead_names  = sorted(ct.get_leads())
+        for name in lead_names:
+            lead = ct.get_lead(name)
+            for contact_name in lead.contacts:
+                self.add_contact(lead,lead.contacts[contact_name])
+        self.set_lead_labels(lead_names)
 
     def set_lead_labels(self, lead_labels):
         self.label_dropdown.clear()
