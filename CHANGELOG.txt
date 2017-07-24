@@ -1,8 +1,10 @@
-**Unreleased**
+**7-24-17**
 Features
 --------
 
 - Contact list updates when loading contacts from JSON
+- Micro-contact type list starts at None
+- Micro lead names say how many microcontacts or microwires are on the lead
 
 
 
