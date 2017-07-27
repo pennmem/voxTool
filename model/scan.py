@@ -483,6 +483,7 @@ class Lead(object):
 class CT(object):
     DEFAULT_THRESHOLD = 99.96
 
+
     def __init__(self, config):
         super(CT, self).__init__()
         self.config = config
@@ -495,16 +496,21 @@ class CT(object):
         self.data = None
         self.brainmask = None
 
+        self.SAVE_METHODS = {
+            'json': self.to_json,
+            'vox_mom': self.to_vox_mom
+
+        }
+
     def _load_scan(self, img_file):
         self.filename = img_file
         log.debug("Loading {}".format(img_file))
         img = nib.load(self.filename)
-        self.data = np.fliplr(img.get_data()).squeeze()
+        self.data = img.get_data().squeeze()
         self.brainmask = np.zeros(img.get_data().shape, bool)
 
     def add_mask(self, filename):
         mask = nib.load(filename).get_data()
-        mask = np.fliplr(mask)
         self.brainmask = mask
 
     def interpolate(self, lead_label):
@@ -538,8 +544,14 @@ class CT(object):
                         )
                     )
                 ))
+            pairs = [{'atlases':{},
+                      'info':{},
+                      'names':(lead.label+c1.label,lead.label+c2.label) }
+                     for (c1, c2) in self.calculate_pairs(lead)]
+
             leads[lead.label] = dict(
                 contacts=contacts,
+                pairs=pairs,
                 n_groups=len(groups),
                 dimensions=lead.dimensions,
                 type=lead.type_
@@ -548,6 +560,12 @@ class CT(object):
             leads=leads,
             origin_ct=self.filename
         )
+
+    def saveas(self,fname,format_):
+        try:
+            self.SAVE_METHODS[format_](fname)
+        except KeyError:
+            raise KeyError('Unknown file format %s'%format_)
 
     def to_vox_mom(self,fname):
         csv_out = []
@@ -560,9 +578,29 @@ class CT(object):
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]
                 )
+            pairs = self.calculate_pairs(lead)
+            for pair in pairs:
+                voxel = ((pairs[0].center+pairs[1].center)/2).astype(int)
+                pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
+                csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
+                    pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
         with open(fname,'w') as vox_mom:
             vox_mom.writelines(csv_out)
 
+
+
+    def calculate_pairs(self,lead):
+        pairs = []
+        groups = np.unique([contact.lead_group for contact in lead.contacts.values()])
+        for group in groups:
+            group_contacts = [contact for contact in lead.contacts.values() if contact.lead_group == group]
+            for contact1 in group_contacts:
+                gl1 = contact1.lead_loc
+                contact_pairs = [(contact1, contact2) for contact2 in group_contacts if
+                                 gl1[0] == contact2.lead_loc[0] and gl1[1] + 1 == contact2.lead_loc[1] or
+                                 gl1[1] == contact2.lead_loc[1] and gl1[0] + 1 == contact2.lead_loc[0]]
+                pairs.extend(contact_pairs)
+        return pairs
 
     def to_json(self, filename):
         json.dump(self.to_dict(), open(filename, 'w'),indent=2)
