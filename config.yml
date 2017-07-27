@@ -17,8 +17,10 @@ lead_types:
 
 micro_types:
 # Note: spacing here is defined as the distance in mm from the microcontact to contact 1 of the depth along the lead axis
-  " None": null
+  " None":
+    name: " None"
   AdTech_MM16C (10x):
+    name: "AdTech_MM16C (10x)"
     type: uD
     spacing:
       - -0.5
@@ -31,6 +33,7 @@ micro_types:
       - 2
       - 2
   AdTech_MM16D (8x):
+    name: "AdTech_MM16D (8x)"
     type: uD
     spacing:
       - -0.5
@@ -43,6 +46,7 @@ micro_types:
       - 2
       - 2
   PMT (16x):
+    name: "PMT (16x)"
     type: uD
     spacing:
       - 0.36
@@ -55,6 +59,7 @@ micro_types:
       - 4
       - 4
   Behnke_Fried (9x):
+    name: "Behnke_Fried (9x)"
     type: uW
     spacing:
       - 0.0

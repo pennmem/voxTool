@@ -523,7 +523,7 @@ class LeadDefinitionWidget(QtGui.QWidget):
         dimensions = [(lead['x'], lead['y']) for lead in leads]
         spacings = [self.config['lead_types'][lead_type]['spacing'] for lead_type in types]
         radii = [self.config['lead_types'][lead_type]['radius'] for lead_type in types]
-        micros = [self.config['micro_types'][str(l.get('micro'))] for l in leads]
+        micros = [self.config['micro_types'][str(l.get('micro',' None'))] for l in leads]
         self.controller.set_leads(labels, types, dimensions, radii, spacings,micros)
         self.close()
         self.controller.lead_window.close()
@@ -533,7 +533,8 @@ class LeadDefinitionWidget(QtGui.QWidget):
                        {"label": lead.label,
                         "x":lead.dimensions[0],
                         "y":lead.dimensions[1],
-                        "type":lead.type_}
+                        "type":lead.type_,
+                        "micro":lead.micros['name']}
                       for lead in leads.values()}
         self.refresh()
 

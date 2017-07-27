@@ -190,7 +190,7 @@ class Lead(object):
         self.radius = radius
         self.spacing = spacing
         self.contacts = OrderedDict()
-        self.micros = micros
+        self.micros = {"name" : " None"} if micros is None else micros
 
     def seed_next_contact(self, centered_coordinate):
 
@@ -433,7 +433,7 @@ class Lead(object):
                         lead_group=0))
             return contacts
         else:
-            pass
+            return
 
     def has_lead_location(self, lead_location, lead_group):
         for contact in self.contacts.values():
@@ -564,6 +564,10 @@ class CT(object):
             vox_mom.writelines(csv_out)
 
 
+    def to_json(self, filename):
+        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
+
+
     def from_dict(self, input_dict):
         leads = input_dict['leads']
         labels = leads.keys()
@@ -588,8 +592,6 @@ class CT(object):
                 contact_label = contact['name'].replace(lead_label, '')
                 self._leads[lead_label].add_contact(point_mask, contact_label, loc, group)
 
-    def to_json(self, filename):
-        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
 
     def from_json(self, filename):
         self.from_dict(json.load(open(filename)))
@@ -599,7 +601,7 @@ class CT(object):
             if label not in labels:
                 del self._leads[label]
         if micros is None:
-            micros = [None for l in labels]
+            micros = [' None' for l in labels]
         for label, lead_type, dimension, radius, spacing,micro in zip(
                 labels, lead_types, dimensions, radii, spacings,micros):
             if label not in self._leads:
