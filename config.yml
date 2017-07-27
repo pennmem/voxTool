@@ -67,7 +67,7 @@ micro_types:
       - 9
 
 
-ct_threshold: 99.9
+ct_threshold: 99.96
 
 ct_max_color: 1
 ct_min_color: .3

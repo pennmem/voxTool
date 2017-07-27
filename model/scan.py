@@ -555,7 +555,7 @@ class CT(object):
             ltype = lead.type_
             dims = lead.dimensions
             for contact in sorted(lead.contacts.keys(),cmp=lambda x,y: cmp(int(x),int(y))):
-                voxel = lead.contacts[contact].center
+                voxel = lead.contacts[contact].center.astype(int)
                 contact_name = lead.label+contact
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]

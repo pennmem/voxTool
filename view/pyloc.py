@@ -95,14 +95,12 @@ class PylocControl(object):
         self.select_next_contact_label()
 
     def prompt_for_ct(self):
-        file = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img; *.nii.gz)')
-        if file:
-            self.load_ct(file)
-            self.view.task_bar.define_leads_button.setEnabled(True)
+        scan_loader = ScanLoadingDialog(self,self.config,self.view)
+        scan_loader.exec_()
 
     def load_ct(self, filename):
         self.ct = CT(self.config)
-        self.ct.load(filename)
+        self.ct.load(filename,self.config['ct_threshold'])
         self.view.clear()
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
         self.view.add_cloud(self.ct, '_leads')
@@ -232,6 +230,61 @@ class PylocControl(object):
         self.view.update_cloud('_leads')
 
 
+
+class ScanLoadingDialog(QtGui.QDialog):
+    def __init__(self,controller,config,parent=None):
+        super(ScanLoadingDialog, self).__init__(parent)
+        self.config = config
+        self.controller = controller
+        self.file = ''
+
+        self.file_button = QtGui.QPushButton('Open ...')
+        self.file_button.setFocus()
+        self.file_text = QtGui.QLineEdit()
+
+        self.threshold_box = QtGui.QDoubleSpinBox()
+        self.threshold_box.setRange(0.0,100.0)
+        self.threshold_box.setValue(config['ct_threshold'])
+
+        self.done_button = QtGui.QPushButton('OK')
+
+
+
+        self.set_layout()
+        self.set_callbacks()
+
+
+    def get_file(self):
+        self.file = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img; *.nii.gz)')
+        self.file_text.setText(self.file)
+
+    def finish(self):
+        if self.file:
+            self.config['ct_threshold'] = self.threshold_box.value()
+            self.controller.load_ct(self.file)
+            self.controller.view.task_bar.define_leads_button.setEnabled(True)
+            self.close()
+
+    def set_callbacks(self):
+        self.file_button.clicked.connect(self.get_file)
+        self.done_button.clicked.connect(self.finish)
+
+    def set_layout(self):
+        layout = QtGui.QVBoxLayout(self)
+        threshold_layout = QtGui.QHBoxLayout()
+        threshold_layout.addWidget(QtGui.QLabel('CT threshold: '))
+        threshold_layout.addWidget(self.threshold_box)
+        layout.addLayout(threshold_layout)
+        file_layout = QtGui.QHBoxLayout()
+        file_layout.addWidget(QtGui.QLabel('CT file:'))
+        file_layout.addWidget(self.file_text)
+        file_layout.addWidget(self.file_button)
+        layout.addLayout(file_layout)
+        layout.addWidget(self.done_button)
+
+
+
+
 class PylocWidget(QtGui.QWidget):
     def __init__(self, controller, config, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -246,6 +299,7 @@ class PylocWidget(QtGui.QWidget):
         splitter.addWidget(self.contact_panel)
         splitter.addWidget(self.cloud_widget)
         splitter.addWidget(self.slice_view)
+        splitter.setSizes([50,400,200])
 
         layout.addWidget(splitter)
         layout.addLayout(self.task_bar)

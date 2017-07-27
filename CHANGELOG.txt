@@ -1,3 +1,16 @@
+**7-27-17**
+
+Features
+--------
+- 'Load Scan' button now brings up window asking for threshold and image file, with button for file browser
+
+
+Bug Fixes
+---------
+- Lead definitions can once again be appended to after inital definition
+- tsv outputs are now ints, rather than floats
+
+
 **7-24-17**
 Features
 --------
