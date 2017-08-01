@@ -595,10 +595,10 @@ class CT(object):
         for group in groups:
             group_contacts = [contact for contact in lead.contacts.values() if contact.lead_group == group]
             for contact1 in group_contacts:
-                gl1 = contact1.lead_loc
+                gl1 = contact1.lead_location
                 contact_pairs = [(contact1, contact2) for contact2 in group_contacts if
-                                 gl1[0] == contact2.lead_loc[0] and gl1[1] + 1 == contact2.lead_loc[1] or
-                                 gl1[1] == contact2.lead_loc[1] and gl1[0] + 1 == contact2.lead_loc[0]]
+                                 gl1[0] == contact2.lead_location[0] and gl1[1] + 1 == contact2.lead_location[1] or
+                                 gl1[1] == contact2.lead_location[1] and gl1[0] + 1 == contact2.lead_location[0]]
                 pairs.extend(contact_pairs)
         return pairs
 
