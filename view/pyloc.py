@@ -125,7 +125,7 @@ class PylocControl(object):
     def save_coordinates_csv(self):
         file_  = QtGui.QFileDialog().getSaveFileName(None,'Select save file','.','(*.txt)')
         if file_:
-            self.ct.saveas(file_,'json')
+            self.ct.saveas(file_,'vox_mom')
 
     def load_coordinates(self):
         file = QtGui.QFileDialog().getOpenFileName(None, 'Select voxel_coordinates.json', '.', '(*.json)')
