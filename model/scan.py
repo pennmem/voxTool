@@ -540,12 +540,13 @@ class CT(object):
                     lead_loc=contact.lead_location,
                     coordinate_spaces=dict(
                         ct_voxel=dict(
-                            raw=list(contact.center)
+                            raw=list(contact.center.astype(int))
                         )
                     )
                 ))
             pairs = [{'atlases':{},
                       'info':{},
+                      'coordinate_spaces':{'ct_voxel':{'raw':list((0.5*(c1.center+c2.center)).astype(int))}},
                       'names':(lead.label+c1.label,lead.label+c2.label) }
                      for (c1, c2) in self.calculate_pairs(lead)]
 
@@ -580,7 +581,7 @@ class CT(object):
                 )
             pairs = self.calculate_pairs(lead)
             for pair in pairs:
-                voxel = ((pairs[0].center+pairs[1].center)/2).astype(int)
+                voxel = ((pair[0].center+pair[1].center)/2).astype(int)
                 pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
@@ -603,7 +604,7 @@ class CT(object):
         return pairs
 
     def to_json(self, filename):
-        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
+        json.dump(self.to_dict(), open(filename, 'w'),indent=1)
 
 
     def from_dict(self, input_dict):
