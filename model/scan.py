@@ -604,7 +604,7 @@ class CT(object):
         return pairs
 
     def to_json(self, filename):
-        json.dump(self.to_dict(), open(filename, 'w'),indent=1)
+        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
 
 
     def from_dict(self, input_dict):
