@@ -1,3 +1,13 @@
+**8-14-17**
+Features
+-------
+- Outputs now all saved as integers
+- Outputs now include coordinates for bipolar pairs
+
+Bug Fixes
+---------
+- 'Save as vox_mom' now works again
+
 **7-27-17**
 
 Features
