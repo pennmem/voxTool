@@ -38,6 +38,7 @@ class PylocControl(object):
         self.window.show()
 
         self.lead_window = None
+        self.save_window = None
 
         self.ct = None
         self.config = config
@@ -113,19 +114,15 @@ class PylocControl(object):
     def assign_callbacks(self):
         self.view.task_bar.load_scan_button.clicked.connect(self.prompt_for_ct)
         self.view.task_bar.define_leads_button.clicked.connect(self.define_leads)
-        self.view.task_bar.save_json_button.clicked.connect(self.save_coordinates_json)
-        self.view.task_bar.save_csv_button.clicked.connect(self.save_coordinates_csv)
+        self.view.task_bar.save_button.clicked.connect(self.save_coordinates)
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
 
-    def save_coordinates_json(self):
-        file_ = QtGui.QFileDialog().getSaveFileName(None, 'Select save file', '.', '(*.json)')
-        if file_:
-            self.ct.saveas(file_,'json')
-
-    def save_coordinates_csv(self):
-        file_  = QtGui.QFileDialog().getSaveFileName(None,'Select save file','.','(*.txt)')
-        if file_:
-            self.ct.saveas(file_,'vox_mom')
+    def save_coordinates(self):
+        self.save_window = QtGui.QMainWindow()
+        save_widget = SaveButtonWidget(self,self.config,self.view)
+        self.save_window.setCentralWidget(save_widget)
+        self.save_window.show()
+        self.save_window.resize(200,save_widget.height())
 
     def load_coordinates(self):
         file = QtGui.QFileDialog().getOpenFileName(None, 'Select voxel_coordinates.json', '.', '(*.json)')
@@ -229,7 +226,55 @@ class PylocControl(object):
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
         self.view.update_cloud('_leads')
 
+class SaveButtonWidget(QtGui.QWidget):
+    def __init__(self,controller,config,parent=None):
+        super(SaveButtonWidget, self).__init__(parent)
+        self.config=config
+        self.controller = controller
+        self.extension = '.json'
 
+        self.save_button = QtGui.QPushButton('Save')
+
+        self.format_menu = QtGui.QComboBox()
+        self.format_menu.addItems(['JSON','CSV'])
+
+        self.pairs_button = QtGui.QCheckBox('Include bipolar pairs')
+        self.choose_file_button = QtGui.QPushButton('Chose file')
+
+        self.file_text = QtGui.QLineEdit()
+        self.file = ''
+        self.set_layout()
+        self.set_callbacks()
+
+
+    def set_layout(self):
+        option_layout = QtGui.QVBoxLayout(self)
+        LeadDefinitionWidget.add_labeled_widget(option_layout,'Format: ',self.format_menu)
+        option_layout.addWidget(self.pairs_button)
+        LeadDefinitionWidget.add_labeled_widget(option_layout,'Save as: ',self.file_text)
+        option_layout.addLayout(option_layout)
+        option_layout.addWidget(self.save_button)
+
+
+
+    def get_file(self):
+        self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.',self.extension)
+        self.file_text.setText(self.file)
+
+
+    def set_extension(self):
+        fmt  = self.format_menu.currentText()
+        self.extension = '.txt' if  fmt=='CSV' else '.%s'%fmt.lower()
+
+    def save(self):
+        if self.file:
+            self.controller.ct.saveas(self,self.file,self.format_menu.currentText())
+        self.close()
+        self.controller.save_window.close()
+
+    def set_callbacks(self):
+        self.save_button.clicked.connect(self.save)
+        self.choose_file_button.clicked.connect(self.get_file)
 
 class ScanLoadingDialog(QtGui.QDialog):
     def __init__(self,controller,config,parent=None):
@@ -247,8 +292,6 @@ class ScanLoadingDialog(QtGui.QDialog):
         self.threshold_box.setValue(config['ct_threshold'])
 
         self.done_button = QtGui.QPushButton('OK')
-
-
 
         self.set_layout()
         self.set_callbacks()
@@ -643,14 +686,12 @@ class TaskBarLayout(QtGui.QHBoxLayout):
         self.define_leads_button = QtGui.QPushButton("Define Leads")
         self.define_leads_button.setEnabled(False)
         self.load_coord_button = QtGui.QPushButton("Load Coordinates")
-        self.save_json_button = QtGui.QPushButton("Save as JSON")
-        self.save_csv_button =  QtGui.QPushButton("Save as vox_mom")
+        self.save_button=QtGui.QPushButton("Save as...")
         self.clean_button = QtGui.QPushButton("Clean scan")
         self.addWidget(self.load_scan_button)
         self.addWidget(self.define_leads_button)
         self.addWidget(self.load_coord_button)
-        self.addWidget(self.save_json_button)
-        self.addWidget(self.save_csv_button)
+        self.addWidget(self.save_button)
         self.addWidget(self.clean_button)
 
 

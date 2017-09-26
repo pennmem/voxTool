@@ -498,8 +498,8 @@ class CT(object):
 
         self.SAVE_METHODS = {
             'json': self.to_json,
-            'vox_mom': self.to_vox_mom
-
+            'vox_mom': self.to_vox_mom,
+            'csv': self.to_vox_mom
         }
 
     def _load_scan(self, img_file):
@@ -564,7 +564,7 @@ class CT(object):
 
     def saveas(self,fname,format_):
         try:
-            self.SAVE_METHODS[format_](fname)
+            self.SAVE_METHODS[format_.lower()](fname)
         except KeyError:
             raise KeyError('Unknown file format %s'%format_)
 
