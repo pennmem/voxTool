@@ -119,6 +119,7 @@ class PylocControl(object):
 
     def save_coordinates(self):
         self.save_window = QtGui.QMainWindow()
+        self.save_window.setWindowTitle("Save coordinates as")
         save_widget = SaveButtonWidget(self,self.config,self.view)
         self.save_window.setCentralWidget(save_widget)
         self.save_window.show()
@@ -248,17 +249,23 @@ class SaveButtonWidget(QtGui.QWidget):
 
 
     def set_layout(self):
-        option_layout = QtGui.QVBoxLayout(self)
-        LeadDefinitionWidget.add_labeled_widget(option_layout,'Format: ',self.format_menu)
-        option_layout.addWidget(self.pairs_button)
-        LeadDefinitionWidget.add_labeled_widget(option_layout,'Save as: ',self.file_text)
-        option_layout.addLayout(option_layout)
-        option_layout.addWidget(self.save_button)
+        layout = QtGui.QVBoxLayout(self)
+        sublayout = QtGui.QHBoxLayout()
+        ss1 = QtGui.QVBoxLayout()
+        ss2 = QtGui.QVBoxLayout()
+        LeadDefinitionWidget.add_labeled_widget(ss1,'Format: ',self.format_menu)
+        ss1.addWidget(self.pairs_button)
+        LeadDefinitionWidget.add_labeled_widget(ss2,'Save as: ',self.file_text)
+        ss2.addWidget(self.choose_file_button)
+        sublayout.addLayout(ss1)
+        sublayout.addLayout(ss2)
+        layout.addLayout(sublayout)
+        layout.addWidget(self.save_button)
 
 
 
     def get_file(self):
-        self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.',self.extension)
+        self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.','%s (*%s)'%(self.format_menu.currentText(),self.extension))
         self.file_text.setText(self.file)
 
 
@@ -267,14 +274,18 @@ class SaveButtonWidget(QtGui.QWidget):
         self.extension = '.txt' if  fmt=='CSV' else '.%s'%fmt.lower()
 
     def save(self):
-        if self.file:
-            self.controller.ct.saveas(self,self.file,self.format_menu.currentText())
+        file_ = self.file or self.file_text.text()
+        if file_:
+            self.controller.ct.saveas(file_,self.format_menu.currentText(),self.pairs_button.isChecked())
         self.close()
         self.controller.save_window.close()
 
     def set_callbacks(self):
         self.save_button.clicked.connect(self.save)
         self.choose_file_button.clicked.connect(self.get_file)
+
+    def minimumSizeHint(self):
+        return QtCore.QSize(400,100)
 
 class ScanLoadingDialog(QtGui.QDialog):
     def __init__(self,controller,config,parent=None):

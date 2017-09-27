@@ -527,7 +527,7 @@ class CT(object):
                     micro_lead.add_contact(**contact_dict)
                 self._leads[micro_lead.label]=micro_lead
 
-    def to_dict(self):
+    def to_dict(self,include_bipolar=False):
         leads = {}
         for lead in self._leads.values():
             contacts = []
@@ -544,12 +544,14 @@ class CT(object):
                         )
                     )
                 ))
-            pairs = [{'atlases':{},
-                      'info':{},
-                      'coordinate_spaces':{'ct_voxel':{'raw':list((0.5*(c1.center+c2.center)).astype(int))}},
-                      'names':(lead.label+c1.label,lead.label+c2.label) }
-                     for (c1, c2) in self.calculate_pairs(lead)]
-
+            if include_bipolar:
+                pairs = [{'atlases':{},
+                          'info':{},
+                          'coordinate_spaces':{'ct_voxel':{'raw':list((0.5*(c1.center+c2.center)).astype(int))}},
+                          'names':(lead.label+c1.label,lead.label+c2.label) }
+                         for (c1, c2) in self.calculate_pairs(lead)]
+            else:
+                pairs = []
             leads[lead.label] = dict(
                 contacts=contacts,
                 pairs=pairs,
@@ -562,13 +564,13 @@ class CT(object):
             origin_ct=self.filename
         )
 
-    def saveas(self,fname,format_):
+    def saveas(self,fname,format_,include_bipolar=False):
         try:
-            self.SAVE_METHODS[format_.lower()](fname)
+            self.SAVE_METHODS[format_.lower()](fname,include_bipolar)
         except KeyError:
             raise KeyError('Unknown file format %s'%format_)
 
-    def to_vox_mom(self,fname):
+    def to_vox_mom(self,fname,include_bipolar=False):
         csv_out = []
         for lead in sorted(self.get_leads().values(),cmp=lambda x,y:cmp(x.label.upper(),y.label.upper()) ):
             ltype = lead.type_
@@ -579,12 +581,13 @@ class CT(object):
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]
                 )
-            pairs = self.calculate_pairs(lead)
-            for pair in pairs:
-                voxel = ((pair[0].center+pair[1].center)/2).astype(int)
-                pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
-                csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
-                    pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
+            if include_bipolar:
+                pairs = self.calculate_pairs(lead)
+                for pair in pairs:
+                    voxel = ((pair[0].center+pair[1].center)/2).astype(int)
+                    pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
+                    csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
+                        pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
         with open(fname,'w') as vox_mom:
             vox_mom.writelines(csv_out)
 
@@ -603,8 +606,8 @@ class CT(object):
                 pairs.extend(contact_pairs)
         return pairs
 
-    def to_json(self, filename):
-        json.dump(self.to_dict(), open(filename, 'w'),indent=2)
+    def to_json(self, filename,include_bipolar=False):
+        json.dump(self.to_dict(include_bipolar), open(filename, 'w'),indent=2)
 
 
     def from_dict(self, input_dict):
