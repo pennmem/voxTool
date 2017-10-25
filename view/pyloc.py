@@ -240,7 +240,7 @@ class SaveButtonWidget(QtGui.QWidget):
         self.format_menu.addItems(['JSON','CSV'])
 
         self.pairs_button = QtGui.QCheckBox('Include bipolar pairs')
-        self.choose_file_button = QtGui.QPushButton('Chose file')
+        self.choose_file_button = QtGui.QPushButton('Choose file')
 
         self.file_text = QtGui.QLineEdit()
         self.file = ''
@@ -262,12 +262,10 @@ class SaveButtonWidget(QtGui.QWidget):
         layout.addLayout(sublayout)
         layout.addWidget(self.save_button)
 
-
-
     def get_file(self):
         self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.','%s (*%s)'%(self.format_menu.currentText(),self.extension))
+        fir
         self.file_text.setText(self.file)
-
 
     def set_extension(self):
         fmt  = self.format_menu.currentText()
@@ -281,6 +279,7 @@ class SaveButtonWidget(QtGui.QWidget):
         self.controller.save_window.close()
 
     def set_callbacks(self):
+        self.format_menu.currentIndexChanged.connect(self.set_extension)
         self.save_button.clicked.connect(self.save)
         self.choose_file_button.clicked.connect(self.get_file)
 
