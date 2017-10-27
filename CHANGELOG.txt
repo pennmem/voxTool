@@ -1,3 +1,11 @@
+**10-26-17**
+- added README
+Bug Fixes
+---------
+- Save window now updates file extension correctly
+- to_vox_mom now rounds to nearest integer
+
+
 **8-14-17**
 Features
 -------

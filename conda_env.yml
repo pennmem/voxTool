@@ -40,5 +40,4 @@ dependencies:
   - python-dateutil==2.6.0
   - pytz==2016.10
   - scipy==0.18.1
-prefix: /Users/iped/miniconda2/envs/vt0
 
