@@ -237,7 +237,7 @@ class SaveButtonWidget(QtGui.QWidget):
         self.save_button = QtGui.QPushButton('Save')
 
         self.format_menu = QtGui.QComboBox()
-        self.format_menu.addItems(['JSON','CSV'])
+        self.format_menu.addItems(['JSON','TXT'])
 
         self.pairs_button = QtGui.QCheckBox('Include bipolar pairs')
         self.choose_file_button = QtGui.QPushButton('Choose file')
@@ -264,12 +264,11 @@ class SaveButtonWidget(QtGui.QWidget):
 
     def get_file(self):
         self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.','%s (*%s)'%(self.format_menu.currentText(),self.extension))
-        fir
         self.file_text.setText(self.file)
 
     def set_extension(self):
         fmt  = self.format_menu.currentText()
-        self.extension = '.txt' if  fmt=='CSV' else '.%s'%fmt.lower()
+        self.extension = '.%s'%fmt.lower()
 
     def save(self):
         file_ = self.file or self.file_text.text()

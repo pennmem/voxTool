@@ -499,7 +499,7 @@ class CT(object):
         self.SAVE_METHODS = {
             'json': self.to_json,
             'vox_mom': self.to_vox_mom,
-            'csv': self.to_vox_mom
+            'txt': self.to_vox_mom
         }
 
     def _load_scan(self, img_file):
