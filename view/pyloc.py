@@ -439,6 +439,9 @@ class ContactPanelWidget(QtGui.QWidget):
                                 "S:", self.s_voxel)
 
         self.submit_button = QtGui.QPushButton("Submit")
+        self.submit_shortcut = QtGui.QShortcut(QtGui.QKeySequence().fromString('S'),
+                                               self.submit_button)
+
         layout.addWidget(self.submit_button)
 
         contact_label = QtGui.QLabel("Contacts:")
@@ -469,6 +472,7 @@ class ContactPanelWidget(QtGui.QWidget):
         self.label_dropdown.currentIndexChanged.connect(self.lead_changed)
         self.contact_name.textChanged.connect(self.contact_changed)
         self.submit_button.clicked.connect(self.submit_pressed)
+        self.submit_shortcut.activated.connect(self.submit_pressed)
         self.x_lead_loc.textChanged.connect(self.lead_location_changed)
         self.y_lead_loc.textChanged.connect(self.lead_location_changed)
         self.lead_group.textChanged.connect(self.lead_location_changed)
@@ -596,7 +600,7 @@ class LeadDefinitionWidget(QtGui.QWidget):
         self.add_labeled_widget(layout, "Type: ", self.type_box)
 
         self.micro_box = QtGui.QComboBox()
-        for micro_lead_type in sorted(config['micro_types'].keys()):
+        for micro_lead_type in sorted(config['lead_types']['micros'].keys()):
             self.micro_box.addItem(micro_lead_type)
         self.add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
 

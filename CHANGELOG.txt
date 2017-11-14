@@ -1,6 +1,6 @@
 ** 10-14-17 **
 - Save window replaced by single button + checkbox in general task bar
-
+- "S" key bound to "Submit" button
 Bug Fixes
 ---------
 - AutoMicro feature no longer causes lead definition window to silently crash
