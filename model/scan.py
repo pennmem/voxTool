@@ -413,27 +413,24 @@ class Lead(object):
 
     def make_micro_contacts(self):
         # All this only works for depth electrodes
-        if self.micros:
-            contact_1 = self.contacts.values()[0]
-            contact_n = self.contacts.values()[1]
-            lead_unit_vector = (contact_n.center - contact_1.center)
-            # Micro-contact positions are in relative units from the center of the last contact
-            micro_nums = iter(xrange(1,1+sum(self.micros['numbering'])))
-            contacts=[]
-            for i,(n_contacts,spacing) in enumerate(zip(self.micros['numbering'],self.micros['spacing'])):
-                micro_center = spacing*lead_unit_vector+contact_1.center
-                for j in range(n_contacts):
-                    lead_location = (float('%s.%s'%(i+1,j+1)),1)
-                    contact_num = str(micro_nums.next())
-                    contacts.append(dict(
-                        center=micro_center,
-                        point_cloud=self.point_cloud,
-                        contact_label=contact_num,
-                        lead_location=lead_location,
-                        lead_group=0))
-            return contacts
-        else:
-            return
+        contact_1 = self.contacts.values()[0]
+        contact_n = self.contacts.values()[1]
+        lead_unit_vector = (contact_n.center - contact_1.center)
+        # Micro-contact positions are in relative units from the center of the last contact
+        micro_nums = iter(xrange(1,1+sum(self.micros['numbering'])))
+        contacts=[]
+        for i,(n_contacts,spacing) in enumerate(zip(self.micros['numbering'],self.micros['spacing'])):
+            micro_center = spacing*lead_unit_vector+contact_1.center
+            for j in range(n_contacts):
+                lead_location = (float('%s.%s'%(i+1,j+1)),1)
+                contact_num = str(micro_nums.next())
+                contacts.append(dict(
+                    center=micro_center,
+                    point_cloud=self.point_cloud,
+                    contact_label=contact_num,
+                    lead_location=lead_location,
+                    lead_group=0))
+        return contacts
 
     def has_lead_location(self, lead_location, lead_group):
         for contact in self.contacts.values():
@@ -497,9 +494,9 @@ class CT(object):
         self.brainmask = None
 
         self.SAVE_METHODS = {
-            'json': self.to_json,
-            'vox_mom': self.to_vox_mom,
-            'txt': self.to_vox_mom
+            '.json': self.to_json,
+            '.vox_mom': self.to_vox_mom,
+            '.txt': self.to_vox_mom
         }
 
     def _load_scan(self, img_file):
@@ -519,10 +516,10 @@ class CT(object):
 
     def add_micro_contacts(self):
         for lead in self._leads.values():
-            if lead.micros:
+            if lead.micros and lead.micros['name'] != ' None':
                 micro_contacts = lead.make_micro_contacts()
                 micro_lead = Lead(lead.point_cloud,lead.label+'Micro',lead_type=lead.micros['type'],dimensions=lead.dimensions,
-                                  micros=lead.micros)
+                                  micros=None)
                 for contact_dict in micro_contacts:
                     micro_lead.add_contact(**contact_dict)
                 self._leads[micro_lead.label]=micro_lead

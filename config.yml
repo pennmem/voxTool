@@ -1,70 +1,76 @@
 %Pyloc Configuration File
 ---
 lead_types:
-  D:
-    name: Depth
-    radius: 3
-    spacing: 10
-    max_y: 1
-  G:
-    name: Grid
-    radius: 5
-    spacing: 20
-  S:
-    name: Strip
-    radius: 5
-    spacing: 20
+  macros:
+    D:
+      name: Depth
+      radius: 3
+      spacing: 10
+      max_y: 1
+      selectable: True
+    G:
+      name: Grid
+      radius: 5
+      spacing: 20
+      selectable: True
+    S:
+      name: Strip
+      radius: 5
+      spacing: 20
+      selectable: True
+  micros:
+    " None":
+      name: " None"
+    AdTech_MM16C (10x):
+      name: "AdTech_MM16C (10x)"
+      type: uD
+      spacing:
+        - -0.5
+        - 0.5
+        - 1.5
+        - 2.5
+      numbering:
+        - 3
+        - 3
+        - 2
+        - 2
+    AdTech_MM16D (8x):
+      name: "AdTech_MM16D (8x)"
+      type: uD
+      spacing:
+        - -0.5
+        - 0.5
+        - 1.5
+        - 2.5
+      numbering:
+        - 2
+        - 2
+        - 2
+        - 2
+    PMT (16x):
+      name: "PMT (16x)"
+      type: uD
+      spacing:
+        - 0.36
+        - 0.63
+        - 1.36
+        - 2.36
+      numbering:
+        - 4
+        - 4
+        - 4
+        - 4
+    Behnke_Fried (9x):
+      name: "Behnke_Fried (9x)"
+      type: uW
+      spacing:
+        - 0.0
+      numbering:
+        - 9
+
 
 micro_types:
 # Note: spacing here is defined as the distance in mm from the microcontact to contact 1 of the depth along the lead axis
-  " None":
-    name: " None"
-  AdTech_MM16C (10x):
-    name: "AdTech_MM16C (10x)"
-    type: uD
-    spacing:
-      - -0.5
-      - 0.5
-      - 1.5
-      - 2.5
-    numbering:
-      - 3
-      - 3
-      - 2
-      - 2
-  AdTech_MM16D (8x):
-    name: "AdTech_MM16D (8x)"
-    type: uD
-    spacing:
-      - -0.5
-      - 0.5
-      - 1.5
-      - 2.5
-    numbering:
-      - 2
-      - 2
-      - 2
-      - 2
-  PMT (16x):
-    name: "PMT (16x)"
-    type: uD
-    spacing:
-      - 0.36
-      - 0.63
-      - 1.36
-      - 2.36
-    numbering:
-      - 4
-      - 4
-      - 4
-      - 4
-  Behnke_Fried (9x):
-    name: "Behnke_Fried (9x)"
-    type: uW
-    spacing:
-      - 0.0
-    numbering:
-      - 9
 
 
 ct_threshold: 99.96

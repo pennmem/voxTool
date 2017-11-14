@@ -1,3 +1,11 @@
+** 10-14-17 **
+- Save window replaced by single button + checkbox in general task bar
+
+Bug Fixes
+---------
+- AutoMicro feature no longer causes lead definition window to silently crash
+
+
 **10-26-17**
 - added README
 Bug Fixes

@@ -118,12 +118,17 @@ class PylocControl(object):
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
 
     def save_coordinates(self):
-        self.save_window = QtGui.QMainWindow()
-        self.save_window.setWindowTitle("Save coordinates as")
-        save_widget = SaveButtonWidget(self,self.config,self.view)
-        self.save_window.setCentralWidget(save_widget)
-        self.save_window.show()
-        self.save_window.resize(200,save_widget.height())
+        file,file_filter = QtGui.QFileDialog().getSaveFileNameAndFilter(None,'Save as:',os.path.join(os.getcwd(),'voxel_coordinates.json'),
+                                                            'JSON (*.json);;TXT (*.txt)','JSON (*.json)')
+        if file:
+            self.ct.saveas(file,os.path.splitext(file)[-1],self.view.task_bar.bipolar_box.isChecked())
+
+        # self.save_window = QtGui.QMainWindow()
+        # self.save_window.setWindowTitle("Save coordinates as")
+        # save_widget = SaveButtonWidget(self,self.config,self.view)
+        # self.save_window.setCentralWidget(save_widget)
+        # self.save_window.show()
+        # self.save_window.resize(200,save_widget.height())
 
     def load_coordinates(self):
         file = QtGui.QFileDialog().getOpenFileName(None, 'Select voxel_coordinates.json', '.', '(*.json)')
@@ -315,6 +320,7 @@ class ScanLoadingDialog(QtGui.QDialog):
             self.config['ct_threshold'] = self.threshold_box.value()
             self.controller.load_ct(self.file)
             self.controller.view.task_bar.define_leads_button.setEnabled(True)
+            self.controller.view.task_bar.save_button.setEnabled(True)
             self.close()
 
     def set_callbacks(self):
@@ -584,7 +590,7 @@ class LeadDefinitionWidget(QtGui.QWidget):
         layout.addLayout(size_layout)
 
         self.type_box = QtGui.QComboBox()
-        for label, electrode_type in config['lead_types'].items():
+        for label, electrode_type in config['lead_types']['macros'].items():
             self.type_box.addItem("{}: {name}".format(label, **electrode_type))
 
         self.add_labeled_widget(layout, "Type: ", self.type_box)
@@ -626,10 +632,13 @@ class LeadDefinitionWidget(QtGui.QWidget):
         leads = self._leads.values()
         labels = [lead['label'] for lead in leads]
         types = [lead['type'] for lead in leads]
+        supertypes = ['micros' if t in self.config['lead_types']['micros'] else 'macros' for t in types]
         dimensions = [(lead['x'], lead['y']) for lead in leads]
-        spacings = [self.config['lead_types'][lead_type]['spacing'] for lead_type in types]
-        radii = [self.config['lead_types'][lead_type]['radius'] for lead_type in types]
-        micros = [self.config['micro_types'][str(l.get('micro',' None'))] for l in leads]
+        spacings = [self.config['lead_types'][lead_supertype][lead_type]['spacing']
+                    for (lead_supertype,lead_type) in zip(supertypes,types)]
+        radii = [self.config['lead_types'][lead_supertype][lead_type]['radius'] for
+                 (lead_supertype,lead_type) in zip(supertypes,types)]
+        micros = [self.config['lead_types']['micros'][str(l.get('micro',' None'))] for l in leads]
         self.controller.set_leads(labels, types, dimensions, radii, spacings,micros)
         self.close()
         self.controller.lead_window.close()
@@ -695,12 +704,20 @@ class TaskBarLayout(QtGui.QHBoxLayout):
         self.define_leads_button = QtGui.QPushButton("Define Leads")
         self.define_leads_button.setEnabled(False)
         self.load_coord_button = QtGui.QPushButton("Load Coordinates")
-        self.save_button=QtGui.QPushButton("Save as...")
         self.clean_button = QtGui.QPushButton("Clean scan")
+        self.save_button=QtGui.QPushButton("Save as...")
+        self.save_button.setEnabled(False)
+        self.bipolar_box = QtGui.QCheckBox("Include Bipolar Pairs")
+
+        save_layout = QtGui.QVBoxLayout()
+        save_layout.addWidget(self.save_button)
+        save_layout.addWidget(self.bipolar_box)
+
+
         self.addWidget(self.load_scan_button)
         self.addWidget(self.define_leads_button)
         self.addWidget(self.load_coord_button)
-        self.addWidget(self.save_button)
+        self.addLayout(save_layout)
         self.addWidget(self.clean_button)
 
 
