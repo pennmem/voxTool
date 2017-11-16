@@ -363,6 +363,7 @@ class PylocWidget(QtGui.QWidget):
         layout.addLayout(self.task_bar)
 
     def clear(self):
+        #TODO: Figure out what needs to be done to deinitialize everything
         pass
 
     def display_message(self, msg):
@@ -594,13 +595,13 @@ class LeadDefinitionWidget(QtGui.QWidget):
         layout.addLayout(size_layout)
 
         self.type_box = QtGui.QComboBox()
-        for label, electrode_type in config['lead_types']['macros'].items():
+        for label, electrode_type in config['lead_types'].items():
             self.type_box.addItem("{}: {name}".format(label, **electrode_type))
 
         self.add_labeled_widget(layout, "Type: ", self.type_box)
 
         self.micro_box = QtGui.QComboBox()
-        for micro_lead_type in sorted(config['lead_types']['micros'].keys()):
+        for micro_lead_type in sorted(config['micros'].keys()):
             self.micro_box.addItem(micro_lead_type)
         self.add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
 
@@ -636,13 +637,10 @@ class LeadDefinitionWidget(QtGui.QWidget):
         leads = self._leads.values()
         labels = [lead['label'] for lead in leads]
         types = [lead['type'] for lead in leads]
-        supertypes = ['micros' if t in self.config['lead_types']['micros'] else 'macros' for t in types]
         dimensions = [(lead['x'], lead['y']) for lead in leads]
-        spacings = [self.config['lead_types'][lead_supertype][lead_type]['spacing']
-                    for (lead_supertype,lead_type) in zip(supertypes,types)]
-        radii = [self.config['lead_types'][lead_supertype][lead_type]['radius'] for
-                 (lead_supertype,lead_type) in zip(supertypes,types)]
-        micros = [self.config['lead_types']['micros'][str(l.get('micro',' None'))] for l in leads]
+        spacings = [self.config['lead_types'][lead_type]['spacing'] for lead_type in types]
+        radii = [self.config['lead_types'][lead_type]['radius'] for lead_type in types]
+        micros = [self.config['micros'][str(l.get('micro',' None'))] for l in leads]
         self.controller.set_leads(labels, types, dimensions, radii, spacings,micros)
         self.close()
         self.controller.lead_window.close()
@@ -654,7 +652,7 @@ class LeadDefinitionWidget(QtGui.QWidget):
                         "y":lead.dimensions[1],
                         "type":lead.type_,
                         "micro":lead.micros['name']}
-                      for lead in leads.values()}
+                      for lead in leads.values() }
         self.refresh()
 
     def refresh(self):
