@@ -96,13 +96,16 @@ class PylocControl(object):
         self.select_next_contact_label()
 
     def prompt_for_ct(self):
-        scan_loader = ScanLoadingDialog(self,self.config,self.view)
-        scan_loader.exec_()
+        file_ = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img; *.nii.gz)')
+        if file_:
+            self.load_ct(filename=file_)
+            self.view.task_bar.define_leads_button.setEnabled(True)
+            self.view.task_bar.save_button.setEnabled(True)
+
 
     def load_ct(self, filename):
         self.ct = CT(self.config)
         self.ct.load(filename,self.config['ct_threshold'])
-        self.view.clear()
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
         self.view.add_cloud(self.ct, '_leads')
         self.view.add_cloud(self.ct, '_selected')
@@ -351,6 +354,7 @@ class PylocWidget(QtGui.QWidget):
         self.task_bar = TaskBarLayout()
         self.slice_view = SliceViewWidget(self)
         self.contact_panel = ContactPanelWidget(controller, config, self)
+        self.threshold_panel = ThresholdWidget(controller=controller, config=config, parent=self)
 
         layout = QtGui.QVBoxLayout(self)
         splitter = QtGui.QSplitter()
@@ -359,6 +363,7 @@ class PylocWidget(QtGui.QWidget):
         splitter.addWidget(self.slice_view)
         splitter.setSizes([50,400,200])
 
+        layout.addWidget(self.threshold_panel)
         layout.addWidget(splitter)
         layout.addLayout(self.task_bar)
 
@@ -698,6 +703,32 @@ class LeadDefinitionWidget(QtGui.QWidget):
         sub_layout.addWidget(widget)
         layout.addLayout(sub_layout)
 
+class ThresholdWidget(QtGui.QWidget):
+    """
+    Subwindow for changing the threshold
+    """
+    def __init__(self,controller,config,parent=None):
+        super(ThresholdWidget, self).__init__(parent)
+
+        self.controller = controller
+        self.config = config
+
+        self.set_threshold_button = QtGui.QPushButton("Update Threshold")
+        self.set_threshold_button.clicked.connect(self.update_threshold)
+        self.threshold_selector = QtGui.QDoubleSpinBox()
+        self.threshold_selector.setSingleStep(0.5)
+        self.threshold_selector.setValue(self.config['ct_threshold'])
+
+        layout = QtGui.QHBoxLayout(self)
+        layout.addWidget(self.threshold_selector)
+        layout.addWidget(self.set_threshold_button)
+
+    def update_threshold(self):
+        threshold = self.threshold_selector.value()
+        self.controller.ct.set_threshold(threshold)
+        self.controller.view.add_cloud(self.controller.ct, '_ct', callback=self.controller.select_coordinate)
+        self.config['ct_threshold']=threshold
+
 
 class TaskBarLayout(QtGui.QHBoxLayout):
     def __init__(self, parent=None):
@@ -767,6 +798,8 @@ class CloudViewer(HasTraits):
         self.clouds[label].update()
 
     def add_cloud(self, ct, label, callback=None):
+        if label in self.clouds:
+            self.remove_cloud(label)
         self.clouds[label] = CloudView(ct, label, self.config, callback)
         self.clouds[label].plot()
 
