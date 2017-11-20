@@ -29,3 +29,8 @@
 4. Press "Define leads" to set the names, shapes, types, and microcontacts
    for each implanted lead.
 8.
+
+
+
+## Shortcuts:
+- "Ctrl-O" ("Cmd-O" on Mac") loads a CT file

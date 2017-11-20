@@ -45,6 +45,7 @@ class PylocControl(object):
         self.config = config # Global configuration file
 
         self.assign_callbacks()
+        self.assign_shortcuts()
 
         self.clicked_coordinate = np.zeros((3,))
         self.selected_coordinate = np.zeros((3,))
@@ -141,6 +142,19 @@ class PylocControl(object):
         self.view.task_bar.define_leads_button.clicked.connect(self.define_leads)
         self.view.task_bar.save_button.clicked.connect(self.save_coordinates)
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
+
+
+    def assign_shortcuts(self):
+        """
+        Constructs keyboard shortcuts and assigns them to methods
+        :return:
+        """
+        QtGui.QShortcut(QtGui.QKeySequence('S'),self.view).activated.connect(self.add_selection)
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+O'),self.view).activated.connect(self.prompt_for_ct)
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+D'),self.view).activated.connect(self.define_leads)
+
+
+
 
     def save_coordinates(self):
         """
@@ -386,8 +400,6 @@ class ContactPanelWidget(QtGui.QWidget):
                                 "S:", self.s_voxel)
 
         self.submit_button = QtGui.QPushButton("Submit")
-        self.submit_shortcut = QtGui.QShortcut(QtGui.QKeySequence().fromString('S'),
-                                               self.submit_button)
 
         layout.addWidget(self.submit_button)
 
@@ -419,7 +431,6 @@ class ContactPanelWidget(QtGui.QWidget):
         self.label_dropdown.currentIndexChanged.connect(self.lead_changed)
         self.contact_name.textChanged.connect(self.contact_changed)
         self.submit_button.clicked.connect(self.submit_pressed)
-        self.submit_shortcut.activated.connect(self.submit_pressed)
         self.x_lead_loc.textChanged.connect(self.lead_location_changed)
         self.y_lead_loc.textChanged.connect(self.lead_location_changed)
         self.lead_group.textChanged.connect(self.lead_location_changed)
@@ -667,9 +678,6 @@ class ThresholdWidget(QtGui.QWidget):
         threshold = self.threshold_selector.value()
         if self.controller.ct:
             self.controller.ct.set_threshold(threshold)
-            self.controller.view.add_cloud(self.controller.ct, '_ct', callback=self.controller.select_coordinate)
-            self.controller.view.plot_cloud('_leads')
-            self.controller.view.plot_cloud('_selected')
 
         self.config['ct_threshold']=threshold
 

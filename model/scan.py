@@ -1,8 +1,6 @@
 import nibabel as nib
 import numpy as np
-import scipy.spatial.distance
-from scipy.ndimage.measurements import label
-from scipy.stats.mstats import mode
+from traits.api import HasTraits , CArray, Instance,on_trait_change
 from collections import OrderedDict
 import logging
 import json
@@ -23,8 +21,11 @@ class Scan(object):
         self.brainmask = None
 
 
-class PointCloud(object):
+class PointCloud(HasTraits):
+    coordinates = CArray
+
     def __init__(self, coordinates):
+        super(PointCloud, self).__init__()
         self.coordinates = np.array(coordinates)
 
     def __len__(self):
@@ -43,9 +44,14 @@ class PointCloud(object):
             return self.coordinates[mask]
 
 
-class PointMask(object):
+class PointMask(HasTraits):
+
+    point_cloud = Instance(PointCloud)
+
     def __init__(self, label, point_cloud, mask=None):
+        super(PointMask, self).__init__()
         self.label = label
+        self._bounds = None
         self.point_cloud = point_cloud
         if mask is None:
             mask = np.zeros(len(point_cloud), bool)
@@ -80,6 +86,12 @@ class PointMask(object):
     def coordinates(self):
         return self.point_cloud.get_coordinates(self.mask)
 
+    @on_trait_change('point_cloud.coordinates')
+    def update_mask(self):
+        if self._bounds is not None:
+            new_mask = self.__contains__(self.point_cloud.coordinates)
+            self.mask = new_mask
+
     @staticmethod
     def combined(point_masks):
         indices = np.array([])
@@ -107,10 +119,12 @@ class PointMask(object):
         return self._bounds
 
     def __contains__(self, coordinate):
-        if ((coordinate - self.bounds[0, :]) > -1.5).all() and \
-                ((coordinate - self.bounds[1, :]) < 1.5).all():
-            return True
-        return False
+        lower =  ((coordinate - self.bounds[0, :]) > -1.5)
+        upper  = ((coordinate - self.bounds[1, :]) < 1.5)
+        if lower.squeeze().shape==(3,) and upper.squeeze().shape==(3,):
+            return (lower.all() and upper.all())
+        else:
+           return (lower & upper).all(1)
 
     @staticmethod
     def proximity_mask(point_cloud, point, distance):
@@ -476,6 +490,25 @@ class Lead(object):
             full_mask = np.logical_or(full_mask, mask.mask)
         return PointMask(self.label, self.point_cloud, full_mask)
 
+    def update(self,point_cloud):
+        """
+        Creates new Contact objects for each contact in the lead based on a new point cloud
+        point cloud.
+        :param point_cloud:
+        :return:
+        """
+        new_contacts = OrderedDict()
+        for label_ in self.contacts:
+            contact  = self.contacts[label_]
+
+            if 'u' in self.type_:
+                new_contact = MicroContact(contact.center,point_cloud,label_,contact.lead_location,contact.lead_group)
+            else:
+                mask = PointMask.centered_proximity_mask(point_cloud, contact.center, self.radius)
+                new_contact = Contact(mask,label_,contact.lead_location,contact.lead_group)
+            new_contacts[label_] = new_contact
+        self.contacts = new_contacts
+
 
 class CT(object):
     DEFAULT_THRESHOLD = 99.96
@@ -672,7 +705,6 @@ class CT(object):
         logging.debug("Getting super-threshold indices")
         indices = np.array(mask.nonzero()).T
         self._points.set_coordinates(indices)
-        # TODO: pointcloud should notify listening masks
         self._selection = PointMask("_selection", self._points)
 
     def select_points(self, point_mask):
