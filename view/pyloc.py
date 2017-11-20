@@ -152,6 +152,7 @@ class PylocControl(object):
         QtGui.QShortcut(QtGui.QKeySequence('S'),self.view).activated.connect(self.add_selection)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+O'),self.view).activated.connect(self.prompt_for_ct)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+D'),self.view).activated.connect(self.define_leads)
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+S'),self.view).activated.connect(self.save_coordinates)
 
 
 
