@@ -1,4 +1,4 @@
-** 10-21-17 **
+** 10-21-17 : v2.0.1 **
 - Save window replaced by single button + checkbox in general task bar
 - "S" key bound to "Submit" button
 - CT threshold configurable from within VoxTool
@@ -8,8 +8,8 @@ Bug Fixes
 - Loading a new CT now removes the old CT from the window
 Known Issues
 ------------
--Resetting the threshold after microcontacts have been added
- causes selection, contact indicators to not be plotted
+- "Load Coordinates" button breaks on micro_electrodes
+- Loading a new CT doesn't clear lists of leads, contacts
 
 
 **10-26-17**
