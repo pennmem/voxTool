@@ -119,6 +119,7 @@ class PylocControl(object):
             self.load_ct(filename=file_)
             self.view.task_bar.define_leads_button.setEnabled(True)
             self.view.task_bar.save_button.setEnabled(True)
+            self.view.task_bar.load_coord_button.setEnabled(True)
 
 
     def load_ct(self, filename):
@@ -151,8 +152,10 @@ class PylocControl(object):
         """
         QtGui.QShortcut(QtGui.QKeySequence('S'),self.view).activated.connect(self.add_selection)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+O'),self.view).activated.connect(self.prompt_for_ct)
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+Shift+O'),self.view).activated.connect(self.load_coordinates)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+D'),self.view).activated.connect(self.define_leads)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+S'),self.view).activated.connect(self.save_coordinates)
+
 
 
 
@@ -554,7 +557,8 @@ class LeadDefinitionWidget(QtGui.QWidget):
 
         self.type_box = QtGui.QComboBox()
         for label, electrode_type in config['lead_types'].items():
-            self.type_box.addItem("{}: {name}".format(label, **electrode_type))
+            if 'u' not in label:
+                self.type_box.addItem("{}: {name}".format(label, **electrode_type))
 
         add_labeled_widget(layout, "Type: ", self.type_box)
 
@@ -690,6 +694,7 @@ class TaskBarLayout(QtGui.QHBoxLayout):
         self.define_leads_button = QtGui.QPushButton("Define Leads")
         self.define_leads_button.setEnabled(False)
         self.load_coord_button = QtGui.QPushButton("Load Coordinates")
+        self.load_coord_button.setEnabled(False)
         self.clean_button = QtGui.QPushButton("Clean scan")
         self.save_button=QtGui.QPushButton("Save as...")
         self.save_button.setEnabled(False)
