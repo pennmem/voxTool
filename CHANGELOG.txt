@@ -1,9 +1,15 @@
-** 10-14-17 **
+** 10-21-17 **
 - Save window replaced by single button + checkbox in general task bar
 - "S" key bound to "Submit" button
+- CT threshold configurable from within VoxTool
 Bug Fixes
 ---------
 - AutoMicro feature no longer causes lead definition window to silently crash
+- Loading a new CT now removes the old CT from the window
+Known Issues
+------------
+-Resetting the threshold after microcontacts have been added
+ causes selection, contact indicators to not be plotted
 
 
 **10-26-17**

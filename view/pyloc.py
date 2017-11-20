@@ -24,48 +24,61 @@ log.setLevel(0)
 
 
 class PylocControl(object):
+    """
+    Main class for running VoxTool.
+    """
     def __init__(self, config=None):
-
         if config == None:
             config = yaml.load(open("../model/config.yml"))
 
-        self.app = QtGui.QApplication.instance()
-        self.view = PylocWidget(self, config)
+        self.app = QtGui.QApplication.instance() #: The underlying application. Runs automatically
+        self.view = PylocWidget(self, config) #: The base object for the GUI
         self.view.show()
 
         self.window = QtGui.QMainWindow()
         self.window.setCentralWidget(self.view)
         self.window.show()
 
-        self.lead_window = None
-        self.save_window = None
+        self.lead_window = None #: See ..self.define_leads and ..LeadDefinitionWidget
 
-        self.ct = None
-        self.config = config
+        self.ct = None #: See self.load_ct; instance of ..scan.CT
+        self.config = config # Global configuration file
 
         self.assign_callbacks()
 
         self.clicked_coordinate = np.zeros((3,))
         self.selected_coordinate = np.zeros((3,))
 
-        self.selected_lead = None
+        self.selected_lead = None #: The lead currently being localized
         self.contact_label = ""
         self.lead_location = [0, 0]
         self.lead_group = 0
 
-        self.seeding = False
+        self.seeding = False #: Toggled by self.toggle_seeding
 
     def interpolate_selected_lead(self):
+        """
+        Callback for "Interpolate" button in lead panel
+        :return:
+        """
         self.ct.interpolate(self.selected_lead.label)
         self.view.update_cloud('_leads')
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
 
     def add_micro_contacts(self):
+        """
+        Callback for "Add micro_contact" button in lead panel
+        :return:
+        """
         self.ct.add_micro_contacts()
         self.view.update_cloud('_leads')
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
 
     def toggle_seeding(self):
+        """
+        Callback for "Seeding" button in lead panel
+        :return:
+        """
         self.seeding = not self.seeding
         if self.seeding:
             self.display_seed_contact()
@@ -96,6 +109,10 @@ class PylocControl(object):
         self.select_next_contact_label()
 
     def prompt_for_ct(self):
+        """
+        Callback for "Load Scan" button. See :load_ct:
+        :return:
+        """
         file_ = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img; *.nii.gz)')
         if file_:
             self.load_ct(filename=file_)
@@ -104,6 +121,11 @@ class PylocControl(object):
 
 
     def load_ct(self, filename):
+        """
+        Loads a CT file and updates the view.
+        :param filename: The name of the CT file.
+        :return:
+        """
         self.ct = CT(self.config)
         self.ct.load(filename,self.config['ct_threshold'])
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
@@ -121,17 +143,14 @@ class PylocControl(object):
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
 
     def save_coordinates(self):
+        """
+        Callback to save the localized coordinates in either JSON or text format
+        :return:
+        """
         file,file_filter = QtGui.QFileDialog().getSaveFileNameAndFilter(None,'Save as:',os.path.join(os.getcwd(),'voxel_coordinates.json'),
                                                             'JSON (*.json);;TXT (*.txt)','JSON (*.json)')
         if file:
             self.ct.saveas(file,os.path.splitext(file)[-1],self.view.task_bar.bipolar_box.isChecked())
-
-        # self.save_window = QtGui.QMainWindow()
-        # self.save_window.setWindowTitle("Save coordinates as")
-        # save_widget = SaveButtonWidget(self,self.config,self.view)
-        # self.save_window.setCentralWidget(save_widget)
-        # self.save_window.show()
-        # self.save_window.resize(200,save_widget.height())
 
     def load_coordinates(self):
         file = QtGui.QFileDialog().getOpenFileName(None, 'Select voxel_coordinates.json', '.', '(*.json)')
@@ -141,6 +160,10 @@ class PylocControl(object):
             self.view.contact_panel.update_contacts()
 
     def define_leads(self):
+        """
+        Callback for "Define Leads" button
+        :return:
+        """
         self.lead_window = QtGui.QMainWindow()
         lead_widget = LeadDefinitionWidget(self, self.config, self.view)
         lead_widget.set_leads(self.ct.get_leads())
@@ -149,6 +172,15 @@ class PylocControl(object):
         self.lead_window.resize(200, lead_widget.height())
 
     def select_coordinate(self, coordinate, do_center=True, allow_seed=True):
+        """
+        Callback for interacting with CT window.
+        When a point in the screen is clicked, highlights the points near the selected point.
+        If seeding is enabled, mark the highlighted points as current contact and seed as many additional contacts as possible.
+        :param coordinate: The selected point in voxel space
+        :param do_center: If true, tteratively select the center of the current selection, to better estimate the center of the contact.
+        :param allow_seed: ???
+        :return:
+        """
         log.debug("Selecting near coordinate {}".format(coordinate))
         self.clicked_coordinate = coordinate
         self.selected_coordinate = coordinate
@@ -187,6 +219,11 @@ class PylocControl(object):
         return reply == QtGui.QMessageBox.Yes
 
     def add_selection(self):
+        """
+        Callback for "Submit" button on lead panel
+        Adds selected pixels as new contact
+        :return:
+        """
         lead = self.selected_lead
         lead_label = lead.label
         contact_label = self.contact_label
@@ -235,119 +272,15 @@ class PylocControl(object):
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
         self.view.update_cloud('_leads')
 
-class SaveButtonWidget(QtGui.QWidget):
-    def __init__(self,controller,config,parent=None):
-        super(SaveButtonWidget, self).__init__(parent)
-        self.config=config
-        self.controller = controller
-        self.extension = '.json'
-
-        self.save_button = QtGui.QPushButton('Save')
-
-        self.format_menu = QtGui.QComboBox()
-        self.format_menu.addItems(['JSON','TXT'])
-
-        self.pairs_button = QtGui.QCheckBox('Include bipolar pairs')
-        self.choose_file_button = QtGui.QPushButton('Choose file')
-
-        self.file_text = QtGui.QLineEdit()
-        self.file = ''
-        self.set_layout()
-        self.set_callbacks()
-
-
-    def set_layout(self):
-        layout = QtGui.QVBoxLayout(self)
-        sublayout = QtGui.QHBoxLayout()
-        ss1 = QtGui.QVBoxLayout()
-        ss2 = QtGui.QVBoxLayout()
-        LeadDefinitionWidget.add_labeled_widget(ss1,'Format: ',self.format_menu)
-        ss1.addWidget(self.pairs_button)
-        LeadDefinitionWidget.add_labeled_widget(ss2,'Save as: ',self.file_text)
-        ss2.addWidget(self.choose_file_button)
-        sublayout.addLayout(ss1)
-        sublayout.addLayout(ss2)
-        layout.addLayout(sublayout)
-        layout.addWidget(self.save_button)
-
-    def get_file(self):
-        self.file = QtGui.QFileDialog().getSaveFileName(None,'Save as','.','%s (*%s)'%(self.format_menu.currentText(),self.extension))
-        self.file_text.setText(self.file)
-
-    def set_extension(self):
-        fmt  = self.format_menu.currentText()
-        self.extension = '.%s'%fmt.lower()
-
-    def save(self):
-        file_ = self.file or self.file_text.text()
-        if file_:
-            self.controller.ct.saveas(file_,self.format_menu.currentText(),self.pairs_button.isChecked())
-        self.close()
-        self.controller.save_window.close()
-
-    def set_callbacks(self):
-        self.format_menu.currentIndexChanged.connect(self.set_extension)
-        self.save_button.clicked.connect(self.save)
-        self.choose_file_button.clicked.connect(self.get_file)
-
-    def minimumSizeHint(self):
-        return QtCore.QSize(400,100)
-
-class ScanLoadingDialog(QtGui.QDialog):
-    def __init__(self,controller,config,parent=None):
-        super(ScanLoadingDialog, self).__init__(parent)
-        self.config = config
-        self.controller = controller
-        self.file = ''
-
-        self.file_button = QtGui.QPushButton('Open ...')
-        self.file_button.setFocus()
-        self.file_text = QtGui.QLineEdit()
-
-        self.threshold_box = QtGui.QDoubleSpinBox()
-        self.threshold_box.setRange(0.0,100.0)
-        self.threshold_box.setValue(config['ct_threshold'])
-
-        self.done_button = QtGui.QPushButton('OK')
-
-        self.set_layout()
-        self.set_callbacks()
-
-
-    def get_file(self):
-        self.file = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img; *.nii.gz)')
-        self.file_text.setText(self.file)
-
-    def finish(self):
-        if self.file:
-            self.config['ct_threshold'] = self.threshold_box.value()
-            self.controller.load_ct(self.file)
-            self.controller.view.task_bar.define_leads_button.setEnabled(True)
-            self.controller.view.task_bar.save_button.setEnabled(True)
-            self.close()
-
-    def set_callbacks(self):
-        self.file_button.clicked.connect(self.get_file)
-        self.done_button.clicked.connect(self.finish)
-
-    def set_layout(self):
-        layout = QtGui.QVBoxLayout(self)
-        threshold_layout = QtGui.QHBoxLayout()
-        threshold_layout.addWidget(QtGui.QLabel('CT threshold: '))
-        threshold_layout.addWidget(self.threshold_box)
-        layout.addLayout(threshold_layout)
-        file_layout = QtGui.QHBoxLayout()
-        file_layout.addWidget(QtGui.QLabel('CT file:'))
-        file_layout.addWidget(self.file_text)
-        file_layout.addWidget(self.file_button)
-        layout.addLayout(file_layout)
-        layout.addWidget(self.done_button)
-
-
-
 
 class PylocWidget(QtGui.QWidget):
     def __init__(self, controller, config, parent=None):
+        """
+        The widget controlled by PylocController
+        :param controller:
+        :param config:
+        :param parent:
+        """
         QtGui.QWidget.__init__(self, parent)
         self.controller = controller
         self.cloud_widget = CloudWidget(self, config)
@@ -368,7 +301,6 @@ class PylocWidget(QtGui.QWidget):
         layout.addLayout(self.task_bar)
 
     def clear(self):
-        #TODO: Figure out what needs to be done to deinitialize everything
         pass
 
     def display_message(self, msg):
@@ -380,6 +312,9 @@ class PylocWidget(QtGui.QWidget):
     def update_slices(self, coordinates):
         self.slice_view.set_coordinate(coordinates)
         self.slice_view.update()
+
+    def plot_cloud(self,label):
+        self.cloud_widget.plot_cloud(label)
 
     def add_cloud(self, ct, label, callback=None):
         self.cloud_widget.add_cloud(ct, label, callback)
@@ -402,6 +337,12 @@ class PylocWidget(QtGui.QWidget):
 
 class ContactPanelWidget(QtGui.QWidget):
     def __init__(self, controller, config, parent=None):
+        """
+        Panel that displays and interacts with localized contacts
+        :param controller: The PylocControl for the app
+        :param config: The loaded config dict for the app
+        :param parent: A parent widget
+        """
         super(ContactPanelWidget, self).__init__(parent)
         self.config = config
         self.controller = controller
@@ -413,7 +354,7 @@ class ContactPanelWidget(QtGui.QWidget):
 
         self.label_dropdown = QtGui.QComboBox()
         self.label_dropdown.setMaximumWidth(75)
-        self.add_labeled_widget(lead_layout,
+        add_labeled_widget(lead_layout,
                                 "Label :", self.label_dropdown)
         self.contact_name = QtGui.QLineEdit()
         lead_layout.addWidget(self.contact_name)
@@ -422,26 +363,26 @@ class ContactPanelWidget(QtGui.QWidget):
         layout.addLayout(loc_layout)
 
         self.x_lead_loc = QtGui.QLineEdit()
-        self.add_labeled_widget(loc_layout,
+        add_labeled_widget(loc_layout,
                                 "Lead   x:", self.x_lead_loc)
         self.y_lead_loc = QtGui.QLineEdit()
-        self.add_labeled_widget(loc_layout,
+        add_labeled_widget(loc_layout,
                                 " y:", self.y_lead_loc)
         self.lead_group = QtGui.QLineEdit("0")
-        self.add_labeled_widget(loc_layout,
+        add_labeled_widget(loc_layout,
                                 " group:", self.lead_group)
 
         vox_layout = QtGui.QHBoxLayout()
         layout.addLayout(vox_layout)
 
         self.r_voxel = QtGui.QLineEdit()
-        self.add_labeled_widget(vox_layout,
+        add_labeled_widget(vox_layout,
                                 "R:", self.r_voxel)
         self.a_voxel = QtGui.QLineEdit()
-        self.add_labeled_widget(vox_layout,
+        add_labeled_widget(vox_layout,
                                 "A:", self.a_voxel)
         self.s_voxel = QtGui.QLineEdit()
-        self.add_labeled_widget(vox_layout,
+        add_labeled_widget(vox_layout,
                                 "S:", self.s_voxel)
 
         self.submit_button = QtGui.QPushButton("Submit")
@@ -568,13 +509,13 @@ class ContactPanelWidget(QtGui.QWidget):
         for lead_name in lead_labels:
             self.label_dropdown.addItem(lead_name)
 
-    @staticmethod
-    def add_labeled_widget(layout, label, widget):
-        sub_layout = QtGui.QHBoxLayout()
-        label_widget = QtGui.QLabel(label)
-        sub_layout.addWidget(label_widget)
+def add_labeled_widget(layout, label, *widgets):
+    sub_layout = QtGui.QHBoxLayout()
+    label_widget = QtGui.QLabel(label)
+    sub_layout.addWidget(label_widget)
+    for widget in widgets:
         sub_layout.addWidget(widget)
-        layout.addLayout(sub_layout)
+    layout.addLayout(sub_layout)
 
 
 class LeadDefinitionWidget(QtGui.QWidget):
@@ -588,27 +529,27 @@ class LeadDefinitionWidget(QtGui.QWidget):
         layout = QtGui.QVBoxLayout(self)
 
         self.label_edit = QtGui.QLineEdit()
-        self.add_labeled_widget(layout,
+        add_labeled_widget(layout,
                                 "Lead Name: ", self.label_edit)
 
         size_layout = QtGui.QHBoxLayout()
         size_layout.addWidget(QtGui.QLabel("Dimensions: "))
         self.x_size_edit = QtGui.QLineEdit()
         self.y_size_edit = QtGui.QLineEdit()
-        self.add_labeled_widget(size_layout, "x:", self.x_size_edit)
-        self.add_labeled_widget(size_layout, "y:", self.y_size_edit)
+        add_labeled_widget(size_layout, "x:", self.x_size_edit)
+        add_labeled_widget(size_layout, "y:", self.y_size_edit)
         layout.addLayout(size_layout)
 
         self.type_box = QtGui.QComboBox()
         for label, electrode_type in config['lead_types'].items():
             self.type_box.addItem("{}: {name}".format(label, **electrode_type))
 
-        self.add_labeled_widget(layout, "Type: ", self.type_box)
+        add_labeled_widget(layout, "Type: ", self.type_box)
 
         self.micro_box = QtGui.QComboBox()
         for micro_lead_type in sorted(config['micros'].keys()):
             self.micro_box.addItem(micro_lead_type)
-        self.add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
+        add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
 
         self.submit_button = QtGui.QPushButton("Submit")
         self.submit_button.clicked.connect(self.add_current_lead)
@@ -712,21 +653,24 @@ class ThresholdWidget(QtGui.QWidget):
 
         self.controller = controller
         self.config = config
-
-        self.set_threshold_button = QtGui.QPushButton("Update Threshold")
+        
+        self.set_threshold_button = QtGui.QPushButton("Update")
         self.set_threshold_button.clicked.connect(self.update_threshold)
         self.threshold_selector = QtGui.QDoubleSpinBox()
         self.threshold_selector.setSingleStep(0.5)
         self.threshold_selector.setValue(self.config['ct_threshold'])
 
         layout = QtGui.QHBoxLayout(self)
-        layout.addWidget(self.threshold_selector)
-        layout.addWidget(self.set_threshold_button)
+        add_labeled_widget(layout,'CT Threshold',self.threshold_selector,self.set_threshold_button)
 
     def update_threshold(self):
         threshold = self.threshold_selector.value()
-        self.controller.ct.set_threshold(threshold)
-        self.controller.view.add_cloud(self.controller.ct, '_ct', callback=self.controller.select_coordinate)
+        if self.controller.ct:
+            self.controller.ct.set_threshold(threshold)
+            self.controller.view.add_cloud(self.controller.ct, '_ct', callback=self.controller.select_coordinate)
+            self.controller.view.plot_cloud('_leads')
+            self.controller.view.plot_cloud('_selected')
+
         self.config['ct_threshold']=threshold
 
 
@@ -775,6 +719,9 @@ class CloudWidget(QtGui.QWidget):
     def add_cloud(self, ct, label, callback=None):
         self.viewer.add_cloud(ct, label, callback)
 
+    def plot_cloud(self,label):
+        self.viewer.plot_cloud(label)
+
     def remove_cloud(self, label):
         self.viewer.remove_cloud(label)
 
@@ -796,6 +743,9 @@ class CloudViewer(HasTraits):
 
     def update_cloud(self, label):
         self.clouds[label].update()
+
+    def plot_cloud(self,label):
+        self.clouds[label].plot()
 
     def add_cloud(self, ct, label, callback=None):
         if label in self.clouds:
