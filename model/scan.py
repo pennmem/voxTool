@@ -662,7 +662,10 @@ class CT(object):
                 group = contact['lead_group']
                 loc = contact['lead_loc']
                 contact_label = contact['name'].replace(lead_label, '')
-                self._leads[lead_label].add_contact(point_mask, contact_label, loc, group)
+                if 'u' in types[i]:
+                    self._leads[lead_label].add_contact(coordinates,self._points,contact_label,loc,group)
+                else:
+                    self._leads[lead_label].add_contact(point_mask, contact_label, loc, group)
 
 
     def from_json(self, filename):
@@ -673,7 +676,7 @@ class CT(object):
             if label not in labels:
                 del self._leads[label]
         if micros is None:
-            micros = [' None' for l in labels]
+            micros = [self.config['micros'][' None'] for l in labels]
         for label, lead_type, dimension, radius, spacing,micro in zip(
                 labels, lead_types, dimensions, radii, spacings,micros):
             if label not in self._leads:
