@@ -8,8 +8,8 @@ Bug Fixes
 - Loading a new CT now removes the old CT from the window
 Known Issues
 ------------
-- "Load Coordinates" button breaks on micro_electrodes
-- Loading a new CT doesn't clear lists of leads, contacts
+- Loading a new CT doesn't clear contact panel
+- Removing a lead in the lead definition lead window doesn't propagate to contact panel
 
 
 **10-26-17**
