@@ -671,20 +671,22 @@ class ThresholdWidget(QtGui.QWidget):
         self.config = config
         
         self.set_threshold_button = QtGui.QPushButton("Update")
-        self.set_threshold_button.clicked.connect(self.update_threshold)
+        self.set_threshold_button.clicked.connect(self.update_pressed)
         self.threshold_selector = QtGui.QDoubleSpinBox()
         self.threshold_selector.setSingleStep(0.5)
         self.threshold_selector.setValue(self.config['ct_threshold'])
+        self.threshold_selector.valueChanged.connect(self.update_threshold_value)
+        self.threshold_selector.setKeyboardTracking(True)
 
         layout = QtGui.QHBoxLayout(self)
         add_labeled_widget(layout,'CT Threshold',self.threshold_selector,self.set_threshold_button)
 
-    def update_threshold(self):
-        threshold = self.threshold_selector.value()
+    def update_pressed(self):
         if self.controller.ct:
-            self.controller.ct.set_threshold(threshold)
+            self.controller.ct.set_threshold(self.config['ct_threshold'])
+    def update_threshold_value(self,value):
+        self.config['ct_threshold']= value
 
-        self.config['ct_threshold']=threshold
 
 
 class TaskBarLayout(QtGui.QHBoxLayout):
