@@ -327,6 +327,9 @@ class PylocWidget(QtGui.QWidget):
     def update_cloud(self, label):
         self.cloud_widget.update_cloud(label)
 
+    def update_clouds(self):
+        self.cloud_widget.viewer.update_all()
+
     def update_slices(self, coordinates):
         self.slice_view.set_coordinate(coordinates)
         self.slice_view.update()
@@ -684,6 +687,9 @@ class ThresholdWidget(QtGui.QWidget):
     def update_pressed(self):
         if self.controller.ct:
             self.controller.ct.set_threshold(self.config['ct_threshold'])
+            for label in ['_ct','_leads','_selection']:
+                self.controller.view.update_clouds()
+
     def update_threshold_value(self,value):
         self.config['ct_threshold']= value
 
