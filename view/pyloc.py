@@ -207,6 +207,13 @@ class PylocControl(object):
         if do_center:
             log.debug("Centering...")
             self.center_selection(self.config['selection_iterations'], radius)
+        panel = self.view.contact_panel
+        for i, (_,contact) in enumerate(panel.contacts):
+            if self.clicked_coordinate in contact:
+                panel.contact_list.setCurrentRow(i)
+                break
+        else:
+            panel.contact_list.setCurrentRow(panel.contact_list.currentRow(),QtGui.QItemSelectionModel.Deselect)
 
         if not np.isnan(self.selected_coordinate).all():
             if self.seeding and allow_seed:
