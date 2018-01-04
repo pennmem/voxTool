@@ -881,6 +881,34 @@ class CloudView(object):
             x=x, y=y, z=z, scalars=self.get_colors(labels, x, y, z))
 
 
+class AxisView(CloudView):
+
+    def __init__(self,ct,config,callback=None):
+        super(AxisView, self).__init__(ct,config=config,label='Axis',callback=callback)
+        self._len = 0.1
+
+    def scale_factor(self):
+        x_size,y_size = mlab.gcf().scene.get_size()
+        return np.sqrt(x_size**2 + y_size**2)
+
+    def plot(self):
+
+        u,v,w,t = self.ct.affine.T*self._len*self.scale_factor()
+        self._plot = mlab.quiver3d(
+            u,v,w,
+            colormap=self.colormap,
+            resolution=3,
+        )
+        self._plot.mlab_source.set(scalars = self.get_colors(['x','y','z'],u,v,w))
+
+    def update(self):
+        u, v, w, t = self.ct.affine.T * self._len * self.scale_factor()
+        self._plot.mlab_source.reset(vectors = (u,v,w))
+
+
+
+
+
 if __name__ == '__main__':
     # controller = PylocControl(yaml.load(open(os.path.join(os.path.dirname(__file__) , "../config.yml"))))
     #controller = PylocControl()
