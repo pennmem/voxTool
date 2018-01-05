@@ -1,11 +1,18 @@
+** 1-5-18 **
+- Added labelled RAS axes at center of brain
+- Changed "selected" color to hot pink
+- When selected point is in a localized contact, the appropriate entry in the contacts menu is highlighted
+
 ** 10-21-17 : v2.0.1 **
 - Save window replaced by single button + checkbox in general task bar
 - "S" key bound to "Submit" button
 - CT threshold configurable from within VoxTool
+
 Bug Fixes
 ---------
 - AutoMicro feature no longer causes lead definition window to silently crash
 - Loading a new CT now removes the old CT from the window
+
 Known Issues
 ------------
 - Loading a new CT doesn't clear contact panel
