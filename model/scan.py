@@ -31,6 +31,9 @@ class PointCloud(HasTraits):
     def __len__(self):
         return len(self.coordinates)
 
+    def center(self):
+        return self.coordinates.mean(0)
+
     def clear(self):
         self.coordinates = np.array([[], [], []]).T
 
@@ -525,6 +528,7 @@ class CT(object):
         self.filename = None
         self.data = None
         self.brainmask = None
+        self.affine = None
 
         self.SAVE_METHODS = {
             '.json': self.to_json,
@@ -538,6 +542,7 @@ class CT(object):
         img = nib.load(self.filename)
         self.data = img.get_data().squeeze()
         self.brainmask = np.zeros(img.get_data().shape, bool)
+        self.affine = img.affine[:3,:]
 
     def add_mask(self, filename):
         mask = nib.load(filename).get_data()
