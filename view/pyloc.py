@@ -130,6 +130,7 @@ class PylocControl(object):
         """
         self.ct = CT(self.config)
         self.ct.load(filename,self.config['ct_threshold'])
+        self.view.slice_view.set_label(filename)
         self.view.contact_panel.update_contacts()
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
         self.view.add_cloud(self.ct, '_leads')
