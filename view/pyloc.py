@@ -699,8 +699,11 @@ class ThresholdWidget(QtGui.QWidget):
         self.threshold_selector.valueChanged.connect(self.update_threshold_value)
         self.threshold_selector.setKeyboardTracking(True)
 
-        layout = QtGui.QHBoxLayout(self)
+        layout = QtGui.QVBoxLayout(self)
+        layout.setContentsMargins(1,1,1,1)
         add_labeled_widget(layout,'CT Threshold',self.threshold_selector,self.set_threshold_button)
+
+        self.setSizePolicy(QtGui.QSizePolicy.Preferred,QtGui.QSizePolicy.Maximum)
 
     def update_pressed(self):
         if self.controller.ct:
