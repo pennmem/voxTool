@@ -128,8 +128,10 @@ class PylocControl(object):
         :param filename: The name of the CT file.
         :return:
         """
+        self.clear_contacts()
         self.ct = CT(self.config)
         self.ct.load(filename,self.config['ct_threshold'])
+        self.view.contact_panel.update_contacts()
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
         self.view.add_cloud(self.ct, '_leads')
         self.view.add_cloud(self.ct, '_selected')
@@ -292,6 +294,13 @@ class PylocControl(object):
     def set_leads(self, labels, lead_types, dimensions, radii, spacings,micros=None):
         self.ct.set_leads(labels, lead_types, dimensions, radii, spacings,micros)
         self.view.contact_panel.set_lead_labels(self.ct.get_leads().keys())
+
+    def clear_contacts(self):
+        if self.ct is not None:
+            for lead_name in self.ct._leads:
+                lead = self.ct._leads[lead_name]
+                for contact_name in lead.contacts:
+                    self.delete_contact(lead_name,contact_name)
 
     def delete_contact(self, lead_label, contact_label):
         self.ct.get_lead(lead_label).remove_contact(contact_label)
@@ -915,8 +924,11 @@ class AxisView(CloudView):
             location  = 2.25*location*self._len + centroid
             color = [0.,0.,0.]
             color[i] = 1.
-            mlab.text3d(location[0],location[1],location[2],name,color=tuple(color),scale=self._len/4,
+            mlab.text3d(location[0],location[1],location[2],name,color=tuple(color),scale=self._len/4,opacity=0.75,
                         )#scale_factor=self._len/10,scale_mode='none')
+
+    def contains(self, picker):
+        return False
 
 
     def update(self):

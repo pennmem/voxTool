@@ -3,6 +3,7 @@
 - Changed "selected" color to hot pink
 - When selected point is in a localized contact, the appropriate entry in the contacts menu is highlighted
 
+
 ** 10-21-17 : v2.0.1 **
 - Save window replaced by single button + checkbox in general task bar
 - "S" key bound to "Submit" button

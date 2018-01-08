@@ -522,7 +522,7 @@ class CT(object):
         self.config = config
         self.threshold = self.DEFAULT_THRESHOLD
         self._points = PointCloud([])
-        self._leads = {}
+        self._leads = OrderedDict()
         self._selection = PointMask("_selected", self._points)
         self.selected_lead_label = ""
         self.filename = None
