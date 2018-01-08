@@ -105,7 +105,7 @@ colormaps:
   selected: 'spring'
   default: 'spectral'
 
-selection_iterations: 1
+selection_iterations: 4
 
 lead_display: >
   {lead.label}{contact.label} {contact.lead_location_str} {contact.center_str}
