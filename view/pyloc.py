@@ -917,17 +917,21 @@ class AxisView(CloudView):
             [centroid[0]]*3,[centroid[1]]*3,[centroid[2]]*3,
             u,v,w,
             colormap=self.colormap,
+            opacity = .5,
             scale_mode='none',
             scale_factor = self._len,
             color=(1,1,1),
         )
+        self._plot.actor.actor.pickable_ = False
 
         for i,(location,name) in enumerate(zip((u,v,w),('R','A','S'))):
             location  = 2.25*location*self._len + centroid
             color = [0.,0.,0.]
             color[i] = 1.
-            mlab.text3d(location[0],location[1],location[2],name,color=tuple(color),scale=self._len/4,opacity=0.75,
+            letter = mlab.text3d(location[0],location[1],location[2],name,color=tuple(color),scale=self._len/4,
+                                 opacity=0.75,
                         )#scale_factor=self._len/10,scale_mode='none')
+            letter.actor.actor.pickable_ = False
 
     def contains(self, picker):
         return False
