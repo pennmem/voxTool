@@ -105,6 +105,9 @@ class PylocControl(object):
         log.debug("Setting selected lead to {}".format(lead_name))
         try:
             self.selected_lead = self.ct.get_lead(lead_name)
+            dims = self.selected_lead.dimensions
+            self.view.contact_panel.x_loc_max.setText('/%s'%dims[0])
+            self.view.contact_panel.y_loc_max.setText('/%s'%dims[1])
         except KeyError:
             log.error("Lead {} does not exist".format(lead_name))
         self.select_next_contact_label()
@@ -401,11 +404,15 @@ class ContactPanelWidget(QtGui.QWidget):
         layout.addLayout(loc_layout)
 
         self.x_lead_loc = QtGui.QLineEdit()
+        self.x_loc_max = QtGui.QLabel('')
         add_labeled_widget(loc_layout,
-                                "Lead   x:", self.x_lead_loc)
+                                "Lead   x:", self.x_lead_loc,self.x_loc_max)
+
         self.y_lead_loc = QtGui.QLineEdit()
+        self.y_loc_max  = QtGui.QLabel('')
         add_labeled_widget(loc_layout,
-                                " y:", self.y_lead_loc)
+                                " y:", self.y_lead_loc,self.y_loc_max)
+
         self.lead_group = QtGui.QLineEdit("0")
         add_labeled_widget(loc_layout,
                                 " group:", self.lead_group)
