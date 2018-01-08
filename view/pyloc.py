@@ -128,7 +128,6 @@ class PylocControl(object):
         :param filename: The name of the CT file.
         :return:
         """
-        self.clear_contacts()
         self.ct = CT(self.config)
         self.ct.load(filename,self.config['ct_threshold'])
         self.view.contact_panel.update_contacts()
@@ -294,16 +293,13 @@ class PylocControl(object):
     def set_leads(self, labels, lead_types, dimensions, radii, spacings,micros=None):
         self.ct.set_leads(labels, lead_types, dimensions, radii, spacings,micros)
         self.view.contact_panel.set_lead_labels(self.ct.get_leads().keys())
-
-    def clear_contacts(self):
-        if self.ct is not None:
-            for lead_name in self.ct._leads:
-                lead = self.ct._leads[lead_name]
-                for contact_name in lead.contacts:
-                    self.delete_contact(lead_name,contact_name)
+        self.view.contact_panel.update_contacts()
 
     def delete_contact(self, lead_label, contact_label):
-        self.ct.get_lead(lead_label).remove_contact(contact_label)
+        try:
+            self.ct.get_lead(lead_label).remove_contact(contact_label)
+        except KeyError:
+            pass
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
         self.view.update_cloud('_leads')
 
@@ -534,13 +530,15 @@ class ContactPanelWidget(QtGui.QWidget):
         self.contacts.append((lead, contact))
 
     def update_contacts(self):
+        """
+        Aligns self.contact_list with self.controller.ct._leads
+        :return:
+        """
         ct = self.controller.ct
-        lead_names  = sorted(ct.get_leads())
-        for name in lead_names:
-            lead = ct.get_lead(name)
-            for contact_name in lead.contacts:
-                self.add_contact(lead,lead.contacts[contact_name])
-        self.set_lead_labels(lead_names)
+        if ct is not None:
+            self.set_chosen_leads(ct.get_leads())
+            self.controller.view.update_cloud('_leads')
+            self.set_lead_labels(ct.get_leads().keys())
 
     def set_lead_labels(self, lead_labels):
         self.label_dropdown.clear()
@@ -787,7 +785,8 @@ class CloudViewer(HasTraits):
         self.text_displayed = None
 
     def update_cloud(self, label):
-        self.clouds[label].update()
+        if self.clouds:
+            self.clouds[label].update()
 
     def plot_cloud(self,label):
         self.clouds[label].plot()

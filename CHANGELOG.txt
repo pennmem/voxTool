@@ -1,7 +1,13 @@
-** 1-5-18 **
+** UPCOMING **
 - Added labelled RAS axes at center of brain
 - Changed "selected" color to hot pink
 - When selected point is in a localized contact, the appropriate entry in the contacts menu is highlighted
+
+Bug Fixes
+---------
+- Loading a new CT resets contact panel
+- Removing a lead in the lead definition removes that lead's contacts from the contact panel
+
 
 
 ** 10-21-17 : v2.0.1 **
