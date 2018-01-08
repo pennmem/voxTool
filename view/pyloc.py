@@ -106,8 +106,7 @@ class PylocControl(object):
         try:
             self.selected_lead = self.ct.get_lead(lead_name)
             dims = self.selected_lead.dimensions
-            self.view.contact_panel.x_loc_max.setText('/%s'%dims[0])
-            self.view.contact_panel.y_loc_max.setText('/%s'%dims[1])
+            self.view.contact_panel.update_lead_dims(*dims)
         except KeyError:
             log.error("Lead {} does not exist".format(lead_name))
         self.select_next_contact_label()
@@ -498,6 +497,10 @@ class ContactPanelWidget(QtGui.QWidget):
     def set_lead_location(self, x, y):
         self.x_lead_loc.setText(str(x))
         self.y_lead_loc.setText(str(y))
+
+    def update_lead_dims(self,x,y):
+        self.x_loc_max.setText('/%s'%x)
+        self.y_loc_max.setText('/%s'%y)
 
     def lead_location_changed(self):
         x = self.find_digit(self.x_lead_loc.text())
