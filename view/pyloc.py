@@ -431,6 +431,7 @@ class ContactPanelWidget(QtGui.QWidget):
 
         self.contacts = []
         self.contact_list = QtGui.QListWidget()
+        self.contact_list.setSelectionMode(QtGui.QAbstractItemView.ContiguousSelection)
         layout.addWidget(self.contact_list)
 
         self.interpolate_button = QtGui.QPushButton("Interpolate")
@@ -467,13 +468,15 @@ class ContactPanelWidget(QtGui.QWidget):
     def keyPressEvent(self, event):
         super(ContactPanelWidget, self).keyPressEvent(event)
         if event.key() == QtCore.Qt.Key_Delete:
-            current_index = self.contact_list.currentIndex()
-            try:
-                lead, contact = self.contacts[current_index.row()]
-                log.debug("Deleting contact {}{}".format(lead.label, contact.label))
-                self.controller.delete_contact(lead.label, contact.label)
-            except Exception as e:
-                log.error("Could not delete contact: {}".format(e))
+            indices = self.contact_list.selectedIndexes()
+            items  = [self.contacts[i.row()] for i in indices ]
+            for (lead,contact) in items:
+                try:
+                    log.debug("Deleting contact {}{}".format(lead.label, contact.label))
+                    self.controller.delete_contact(lead.label, contact.label)
+                except Exception as e:
+                    log.error("Could not delete contact: {}".format(e))
+            self.update_contacts()
 
     def chosen_lead_selected(self):
         current_index = self.contact_list.currentIndex()
