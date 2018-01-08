@@ -17,6 +17,7 @@ class SliceViewWidget(QtGui.QWidget):
 
     def __init__(self, parent=None, scan=None):
         QtGui.QWidget.__init__(self, parent)
+        self.label = QtGui.QLabel('')
         data = scan.data if scan else None
         self.views = [
             SliceView(self, data, axis=0, subplot=311),
@@ -33,7 +34,8 @@ class SliceViewWidget(QtGui.QWidget):
         p.setColor(self.backgroundRole(), QtCore.Qt.black)
         self.setPalette(p)
 
-        layout = QtGui.QHBoxLayout(self)
+        layout = QtGui.QVBoxLayout(self)
+        layout.addWidget(self.label)
         layout.addWidget(splitter)
 
     def set_coordinate(self, coordinate):
@@ -43,6 +45,9 @@ class SliceViewWidget(QtGui.QWidget):
     def set_image(self, image):
         for slice_view in self.views:
             slice_view.set_image(image)
+
+    def set_label(self,label):
+        self.label.setText('File: \n%s'%label)
 
     def update(self):
         for slice_view in self.views:
