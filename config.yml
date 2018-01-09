@@ -9,7 +9,7 @@ lead_types:
     selectable: True
   G:
     name: Grid
-    radius: 5
+    radius: 3
     spacing: 20
     selectable: True
   S:
@@ -105,7 +105,7 @@ colormaps:
   selected: 'spring'
   default: 'spectral'
 
-selection_iterations: 4
+selection_iterations: 2
 
 lead_display: >
   {lead.label}{contact.label} {contact.lead_location_str} {contact.center_str}

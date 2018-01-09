@@ -513,6 +513,9 @@ class ContactPanelWidget(QtGui.QWidget):
         if len(x) > 0 and len(y) > 0 and len(group) > 0:
             self.controller.set_lead_location([int(x), int(y)], int(group))
 
+        new_contact_no = int(x) + (int(y)-1)*int(self.find_digit(self.y_loc_max.text()))
+        self.set_contact_label(str(new_contact_no))
+
     @staticmethod
     def find_digit(label):
         return re.sub(r"[^\d]", "", str(label))
