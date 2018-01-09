@@ -13,7 +13,7 @@ Bug Fixes
 
 
 
-** 10-21-17 : v2.0.1 **
+** 11-21-17 : v2.0.1 **
 - Save window replaced by single button + checkbox in general task bar
 - "S" key bound to "Submit" button
 - CT threshold configurable from within VoxTool
