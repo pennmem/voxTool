@@ -576,50 +576,82 @@ class LeadDefinitionWidget(QtGui.QWidget):
         self.config = config
         self.controller = controller
 
-        layout = QtGui.QVBoxLayout(self)
-
+        # Subwidgets
         self.label_edit = QtGui.QLineEdit()
+        self.x_size_edit = QtGui.QLineEdit()
+        self.y_size_edit = QtGui.QLineEdit()
+        self.type_box = QtGui.QComboBox()
+
+        for label, electrode_type in config['lead_types'].items():
+            if 'u' not in label:
+                self.type_box.addItem("{}: {name}".format(label, **electrode_type))
+
+        self.micro_box = QtGui.QComboBox()
+        for micro_lead_type in sorted(config['micros'].keys()):
+            self.micro_box.addItem(micro_lead_type)
+
+        self.submit_button = QtGui.QPushButton("Submit")
+
+        self.delete_button = QtGui.QPushButton("Delete")
+        self.close_button = QtGui.QPushButton("Confirm")
+
+        self.leads_list = QtGui.QListWidget()
+
+        self.add_callbacks()
+        self.set_layout()
+        self.set_tab_order()
+        self.set_shortcuts()
+        self._leads = OrderedDict()
+
+    def set_layout(self):
+        layout = QtGui.QVBoxLayout(self)
         add_labeled_widget(layout,
                                 "Lead Name: ", self.label_edit)
 
         size_layout = QtGui.QHBoxLayout()
         size_layout.addWidget(QtGui.QLabel("Dimensions: "))
-        self.x_size_edit = QtGui.QLineEdit()
-        self.y_size_edit = QtGui.QLineEdit()
         add_labeled_widget(size_layout, "x:", self.x_size_edit)
         add_labeled_widget(size_layout, "y:", self.y_size_edit)
-        layout.addLayout(size_layout)
 
-        self.type_box = QtGui.QComboBox()
-        for label, electrode_type in config['lead_types'].items():
-            if 'u' not in label:
-                self.type_box.addItem("{}: {name}".format(label, **electrode_type))
+        layout.addLayout(size_layout)
 
         add_labeled_widget(layout, "Type: ", self.type_box)
 
-        self.micro_box = QtGui.QComboBox()
-        for micro_lead_type in sorted(config['micros'].keys()):
-            self.micro_box.addItem(micro_lead_type)
         add_labeled_widget(layout,"Micro-contacts: ",self.micro_box)
-
-        self.submit_button = QtGui.QPushButton("Submit")
-        self.submit_button.clicked.connect(self.add_current_lead)
         layout.addWidget(self.submit_button)
-
-        self.leads_list = QtGui.QListWidget()
         layout.addWidget(self.leads_list)
 
         bottom_layout = QtGui.QHBoxLayout()
-        self.delete_button = QtGui.QPushButton("Delete")
-        self.close_button = QtGui.QPushButton("Confirm")
-        self.close_button.clicked.connect(self.finish)
-        self.delete_button.clicked.connect(self.delete_lead)
 
         bottom_layout.addWidget(self.delete_button)
         bottom_layout.addWidget(self.close_button)
         layout.addLayout(bottom_layout)
 
-        self._leads = OrderedDict()
+
+    def add_callbacks(self):
+        self.submit_button.clicked.connect(self.add_current_lead)
+        self.close_button.clicked.connect(self.finish)
+        self.delete_button.clicked.connect(self.delete_lead)
+
+    def set_tab_order(self):
+        self.setTabOrder(self.micro_box,self.submit_button)
+        self.setTabOrder(self.submit_button,self.leads_list)
+        self.setTabOrder(self.leads_list,self.delete_button)
+        self.setTabOrder(self.delete_button,self.close_button)
+
+    def set_shortcuts(self):
+        submit_shortcut = QtGui.QShortcut(QtGui.QKeySequence('S'),self)
+        submit_shortcut.activated.connect(self.add_current_lead)
+
+        confirm_shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Return),self)
+        confirm_shortcut.activated.connect(self.finish)
+
+        delete_shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Delete),self)
+        delete_shortcut.activated.connect(self.delete_lead)
+
+        focus_shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape),self)
+        focus_shortcut.activated.connect(self.setFocus)
+
 
     @classmethod
     def launch(cls, controller, config, parent=None):
@@ -681,11 +713,12 @@ class LeadDefinitionWidget(QtGui.QWidget):
         self.refresh()
 
     def delete_lead(self):
-        lead_str = self.leads_list.currentItem().text()
-        label = lead_str.split()[0]
-        log.debug('Removing lead %s'%label)
-        del self._leads[label]
-        self.refresh()
+        lead = self.leads_list.currentItem()
+        if lead is not None:
+            label = lead.text().split()[0]
+            log.debug('Removing lead %s'%label)
+            del self._leads[label]
+            self.refresh()
 
     @staticmethod
     def add_labeled_widget(layout, label, widget):
