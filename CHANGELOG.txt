@@ -2,6 +2,9 @@
 - Added labelled RAS axes at center of brain
 - Changed "selected" color to hot pink
 - When selected point is in a localized contact, the appropriate entry in the contacts menu is highlighted
+- Added CT file name above slice view
+- Now displaying lead dimensions
+- Contact menu now allows for multiple selection and deletion
 
 Bug Fixes
 ---------
