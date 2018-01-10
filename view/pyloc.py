@@ -648,6 +648,8 @@ class LeadDefinitionWidget(QtGui.QWidget):
 
         confirm_shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Return),self)
         confirm_shortcut.activated.connect(self.finish)
+        confirm_shortcut = QtGui.QShortcut(QtGui.QKeySequence( QtCore.Qt.Key_Enter),self)
+        confirm_shortcut.activated.connect(self.finish)
 
         delete_shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Delete),self)
         delete_shortcut.activated.connect(self.delete_lead)

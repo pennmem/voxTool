@@ -35,11 +35,12 @@
    "Submit" to mark its location
    - Alternatively, press the "Seeding" button to turn on seeding. VoxTool
      will attempt to extrapolate the locations of the remaing contacts
-     after the first two have been marked. Be sure to double-check that
+     as you select them, incrementing the contact number. Be sure to double-check that
      the results make sense, as occasionally two contacts
      will be given the same location
-   - Alternatively for grids, submit the corners of the grid, then press
-     the "Interpolate" button. VoxTool will attempt to fill in the grid.
+   - Alternatively, add the ends of a strip or depth
+     or the corners of the grid with the "Submit" button, then press
+     the "Interpolate" button. VoxTool will attempt to fill in the lead.
      It may not be completely successful. Pressing "Interpolate" again
      may interpolate additional contacts.
 5. Press "Add Micro-Contacts" to add micro-contacts to any macro/micro leads.
@@ -53,7 +54,11 @@
 
 Button | Key Sequence
 ------ |  ------------
-Submit (contact panel) | S
 Load Scan | Ctrl-O
 Define Leads | Ctrl-D
 Save As | Ctrl-S
+Submit (contact panel) | S
+Submit (lead definition window) | S
+Delete (contact panel)| Delete
+Delete (lead definition window)| Delete
+Confirm (lead definition window) | Enter
