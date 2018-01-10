@@ -91,6 +91,10 @@ class PointMask(HasTraits):
 
     @on_trait_change('point_cloud.coordinates')
     def update_mask(self):
+        """
+        Mask the same area on a new set of coordinates
+        :return:
+        """
         if self._bounds is not None:
             new_mask = self.__contains__(self.point_cloud.coordinates)
             self.mask = new_mask

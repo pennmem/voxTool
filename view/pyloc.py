@@ -23,6 +23,16 @@ log = logging.getLogger()
 log.setLevel(0)
 
 
+def add_labeled_widget(layout, label, *widgets):
+    sub_layout = QtGui.QHBoxLayout()
+    label_widget = QtGui.QLabel(label)
+    sub_layout.addWidget(label_widget)
+    for widget in widgets:
+        sub_layout.addWidget(widget)
+    layout.addLayout(sub_layout)
+
+
+
 class PylocControl(object):
     """
     Main class for running VoxTool.
@@ -149,7 +159,6 @@ class PylocControl(object):
         self.view.task_bar.save_button.clicked.connect(self.save_coordinates)
         self.view.task_bar.load_coord_button.clicked.connect(self.load_coordinates)
 
-
     def assign_shortcuts(self):
         """
         Constructs keyboard shortcuts and assigns them to methods
@@ -160,10 +169,6 @@ class PylocControl(object):
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+Shift+O'),self.view).activated.connect(self.load_coordinates)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+D'),self.view).activated.connect(self.define_leads)
         QtGui.QShortcut(QtGui.QKeySequence('Ctrl+S'),self.view).activated.connect(self.save_coordinates)
-
-
-
-
 
     def save_coordinates(self):
         """
@@ -295,7 +300,9 @@ class PylocControl(object):
 
     def set_leads(self, labels, lead_types, dimensions, radii, spacings,micros=None):
         self.ct.set_leads(labels, lead_types, dimensions, radii, spacings,micros)
-        self.view.contact_panel.set_lead_labels(self.ct.get_leads().keys())
+        leads = self.ct.get_leads()
+        panel_labels = ['%s (%s x %s)' % (k, v.dimensions[0], v.dimensions[1]) for (k, v) in leads.items()]
+        self.view.contact_panel.set_lead_labels(panel_labels)
         self.view.contact_panel.update_contacts()
 
     def delete_contact(self, lead_label, contact_label):
@@ -392,6 +399,7 @@ class ContactPanelWidget(QtGui.QWidget):
         lead_layout = QtGui.QHBoxLayout()
         layout.addLayout(lead_layout)
 
+        self.labels = OrderedDict()
         self.label_dropdown = QtGui.QComboBox()
         self.label_dropdown.setMaximumWidth(75)
         add_labeled_widget(lead_layout,
@@ -521,7 +529,8 @@ class ContactPanelWidget(QtGui.QWidget):
         return re.sub(r"[^\d]", "", str(label))
 
     def lead_changed(self):
-        self.controller.set_selected_lead(self.label_dropdown.currentText())
+        lead_txt = self.label_dropdown.currentText()
+        self.controller.set_selected_lead(lead_txt.split()[0])
         self.lead_group.setText("0")
         self.lead_location_changed()
 
@@ -555,20 +564,14 @@ class ContactPanelWidget(QtGui.QWidget):
         if ct is not None:
             self.set_chosen_leads(ct.get_leads())
             self.controller.view.update_cloud('_leads')
-            self.set_lead_labels(ct.get_leads().keys())
+            leads = ct.get_leads()
+            labels = ['%s (%s x %s)'%(k,v.dimensions[0],v.dimensions[1]) for (k,v) in leads.items()]
+            self.set_lead_labels(labels)
 
     def set_lead_labels(self, lead_labels):
         self.label_dropdown.clear()
         for lead_name in lead_labels:
             self.label_dropdown.addItem(lead_name)
-
-def add_labeled_widget(layout, label, *widgets):
-    sub_layout = QtGui.QHBoxLayout()
-    label_widget = QtGui.QLabel(label)
-    sub_layout.addWidget(label_widget)
-    for widget in widgets:
-        sub_layout.addWidget(widget)
-    layout.addLayout(sub_layout)
 
 
 class LeadDefinitionWidget(QtGui.QWidget):
