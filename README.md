@@ -28,7 +28,8 @@
 1. If continuing a previous localization: load the existing coordinates
    from a JSON coordinate file using the "Load Coordinates" button.
 2. Press "Define leads" to set the names, shapes, types, and microcontacts
-   for each implanted lead.
+   for each implanted lead. Please note that assigning a lead a shape of
+   1 x N will result in incorrect contact labels.
 3. Select the lead you wish to localize in the dropdown menu labeled "Label"
    in the upper left corner
 4. Click on the CT to highlight the next contact on that lead, then press
