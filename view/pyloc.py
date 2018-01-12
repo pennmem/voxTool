@@ -856,6 +856,8 @@ class CloudViewer(HasTraits):
         self.clouds[label].plot()
 
     def add_RAS(self,ct,callback=None):
+        if 'RAS' in self.clouds:
+            self.clouds['RAS'].unplot()
         RAS = AxisView(ct,self.config,callback)
         self.clouds['RAS'] = RAS
         self.clouds['RAS'].plot()
@@ -963,38 +965,35 @@ class AxisView(CloudView):
 
     def __init__(self,ct,config,callback=None):
         super(AxisView, self).__init__(ct,config=config,label='Axis',callback=callback)
-        self._len = 50
+        self.scale = 10
+        self._plots = []
 
     def plot(self):
-        centroid = self.ct._points.center()
+        self._plots = []
+        coords = self.ct._points.coordinates
+        center = np.array([0.5*(coords[:,i].max() + coords[:,i].min()) for i in range(3)])
         u,v,w,t = self.ct.affine.T
-        self._plot = mlab.quiver3d(
-            [centroid[0]]*3,[centroid[1]]*3,[centroid[2]]*3,
-            u,v,w,
-            colormap=self.colormap,
-            opacity = .5,
-            scale_mode='none',
-            scale_factor = self._len,
-            color=(1,1,1),
-        )
-        self._plot.actor.actor.pickable_ = False
 
-        for i,(location,name) in enumerate(zip((u,v,w),('R','A','S'))):
-            location  = 2.25*location*self._len + centroid
+
+        for i,(axis,name) in enumerate(zip((u,v,w),('R','A','S'))):
+            location  = center.copy()
+            location[i] = coords[:,i].max()
             color = [0.,0.,0.]
             color[i] = 1.
-            letter = mlab.text3d(location[0],location[1],location[2],name,color=tuple(color),scale=self._len/4,
+            letter = mlab.text3d(location[0], location[1], location[2], name, color=tuple(color), scale=self.scale,
                                  opacity=0.75,
-                        )#scale_factor=self._len/10,scale_mode='none')
-            letter.actor.actor.pickable_ = False
+                                 )
+            self._plots.append(letter)
 
     def contains(self, picker):
         return False
 
-
     def update(self):
         return
 
+    def unplot(self):
+        for plot in self._plots:
+            plot.remove()
 
 
 
