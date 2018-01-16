@@ -121,6 +121,14 @@ class PylocControl(object):
             log.error("Lead {} does not exist".format(lead_name))
         self.select_next_contact_label()
 
+    def toggle_RAS_axes(self,state):
+        if state:
+            self.view.plot_cloud('RAS')
+        else:
+            self.view.cloud_widget.unplot_cloud('RAS')
+
+
+
     def prompt_for_ct(self):
         """
         Callback for "Load Scan" button. See :load_ct:
@@ -437,6 +445,10 @@ class ContactPanelWidget(QtGui.QWidget):
         add_labeled_widget(vox_layout,
                                 "S:", self.s_voxel)
 
+        self.axes_checkbox = QtGui.QCheckBox("Show RAS Tags")
+        self.axes_checkbox.setChecked(True)
+        vox_layout.addWidget(self.axes_checkbox)
+
         self.submit_button = QtGui.QPushButton("Submit")
 
         layout.addWidget(self.submit_button)
@@ -477,6 +489,7 @@ class ContactPanelWidget(QtGui.QWidget):
         self.contact_list.currentItemChanged.connect(self.chosen_lead_selected)
         self.seed_button.clicked.connect(self.controller.toggle_seeding)
         self.micro_button.clicked.connect(self.controller.add_micro_contacts)
+        self.axes_checkbox.stateChanged.connect(self.controller.toggle_RAS_axes)
 
     LEAD_LOC_REGEX = r'\((\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\)'
 
@@ -823,6 +836,9 @@ class CloudWidget(QtGui.QWidget):
     def plot_cloud(self,label):
         self.viewer.plot_cloud(label)
 
+    def unplot_cloud(self,label):
+        self.viewer.unplot_cloud(label)
+
     def remove_cloud(self, label):
         self.viewer.remove_cloud(label)
 
@@ -848,6 +864,9 @@ class CloudViewer(HasTraits):
 
     def plot_cloud(self,label):
         self.clouds[label].plot()
+
+    def unplot_cloud(self,label):
+        self.clouds[label].unplot()
 
     def add_cloud(self, ct, label, callback=None):
         if label in self.clouds:
@@ -965,7 +984,7 @@ class AxisView(CloudView):
 
     def __init__(self,ct,config,callback=None):
         super(AxisView, self).__init__(ct,config=config,label='Axis',callback=callback)
-        self.scale = 10
+        self.scale = 35
         self._plots = []
 
     def plot(self):
@@ -973,11 +992,11 @@ class AxisView(CloudView):
         coords = self.ct._points.coordinates
         center = np.array([0.5*(coords[:,i].max() + coords[:,i].min()) for i in range(3)])
         u,v,w,t = self.ct.affine.T
-
+        max_dist = np.abs(coords-center).max()
 
         for i,(axis,name) in enumerate(zip((u,v,w),('R','A','S'))):
             location  = center.copy()
-            location[i] = coords[:,i].max()
+            location[i] += max_dist*1.25 * np.sign(axis[i])
             color = [0.,0.,0.]
             color[i] = 1.
             letter = mlab.text3d(location[0], location[1], location[2], name, color=tuple(color), scale=self.scale,
