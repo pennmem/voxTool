@@ -389,6 +389,23 @@ class PylocWidget(QtGui.QWidget):
     def update_lead_location(self, x, y):
         self.contact_panel.set_lead_location(x, y)
 
+class NoScrollComboBox(QtGui.QComboBox):
+    """
+    Subclass of QComboBox that doesn't interact with the scroll wheel.
+    """
+    def __init__(self,*args,**kwargs):
+        super(NoScrollComboBox, self).__init__(*args,**kwargs)
+        # Don't want to receive focus via scroll wheel
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+
+    def wheelEvent(self, QWheelEvent):
+        """
+        No behavior on wheel events
+        :param QWheelEvent:
+        :return:
+        """
+        QWheelEvent.accept()
+        return
 
 class ContactPanelWidget(QtGui.QWidget):
     def __init__(self, controller, config, parent=None):
@@ -408,7 +425,7 @@ class ContactPanelWidget(QtGui.QWidget):
         layout.addLayout(lead_layout)
 
         self.labels = OrderedDict()
-        self.label_dropdown = QtGui.QComboBox()
+        self.label_dropdown = NoScrollComboBox()
         self.label_dropdown.setMaximumWidth(75)
         add_labeled_widget(lead_layout,
                                 "Label :", self.label_dropdown)
