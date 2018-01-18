@@ -551,9 +551,6 @@ class ContactPanelWidget(QtGui.QWidget):
         if len(x) > 0 and len(y) > 0 and len(group) > 0:
             self.controller.set_lead_location([int(x), int(y)], int(group))
 
-        new_contact_no = int(x) + (int(y)-1)*int(self.find_digit(self.y_loc_max.text()))
-        self.set_contact_label(str(new_contact_no))
-
     @staticmethod
     def find_digit(label):
         return re.sub(r"[^\d]", "", str(label))
@@ -592,9 +589,9 @@ class ContactPanelWidget(QtGui.QWidget):
         """
         ct = self.controller.ct
         if ct is not None:
-            self.set_chosen_leads(ct.get_leads())
-            self.controller.view.update_cloud('_leads')
             leads = ct.get_leads()
+            self.set_chosen_leads(leads)
+            self.controller.view.update_cloud('_leads')
             labels = ['%s (%s x %s)'%(k,v.dimensions[0],v.dimensions[1]) for (k,v) in leads.items()]
             self.set_lead_labels(labels)
 
