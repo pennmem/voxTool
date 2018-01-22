@@ -122,10 +122,8 @@ class PylocControl(object):
         self.select_next_contact_label()
 
     def toggle_RAS_axes(self,state):
-        if state:
-            self.view.plot_cloud('RAS')
-        else:
-            self.view.cloud_widget.unplot_cloud('RAS')
+        self.view.toggle_RAS()
+
 
 
 
@@ -152,6 +150,7 @@ class PylocControl(object):
         self.ct.load(filename,self.config['ct_threshold'])
         self.view.slice_view.set_label(filename)
         self.view.contact_panel.update_contacts()
+        self.view.contact_panel.setEnabled(True)
         self.view.add_cloud(self.ct, '_ct', callback=self.select_coordinate)
         self.view.add_cloud(self.ct, '_leads')
         self.view.add_cloud(self.ct, '_selected')
@@ -336,6 +335,7 @@ class PylocWidget(QtGui.QWidget):
         self.task_bar = TaskBarLayout()
         self.slice_view = SliceViewWidget(self)
         self.contact_panel = ContactPanelWidget(controller, config, self)
+        self.contact_panel.setEnabled(False)
         self.threshold_panel = ThresholdWidget(controller=controller, config=config, parent=self)
 
         layout = QtGui.QVBoxLayout(self)
@@ -373,6 +373,9 @@ class PylocWidget(QtGui.QWidget):
 
     def add_RAS(self,ct,callback=None):
         self.cloud_widget.add_RAS(ct,callback)
+
+    def toggle_RAS(self):
+        self.cloud_widget.toggle_RAS()
 
     def remove_cloud(self, label):
         self.cloud_widget.remove_cloud(label)
@@ -847,6 +850,13 @@ class CloudWidget(QtGui.QWidget):
     def add_RAS(self,ct,callback=None):
         self.viewer.add_RAS(ct,callback)
 
+    def toggle_RAS(self):
+        RAS = self.viewer.RAS
+        if RAS._plots and all([x.visible for x in RAS._plots]):
+            RAS.hide()
+        else:
+            RAS.show()
+
     def plot_cloud(self,label):
         self.viewer.plot_cloud(label)
 
@@ -871,6 +881,7 @@ class CloudViewer(HasTraits):
         mlab.figure(self.figure, bgcolor=self.BACKGROUND_COLOR)
         self.clouds = {}
         self.text_displayed = None
+        self.RAS = None
 
     def update_cloud(self, label):
         if self.clouds:
@@ -889,11 +900,8 @@ class CloudViewer(HasTraits):
         self.clouds[label].plot()
 
     def add_RAS(self,ct,callback=None):
-        if 'RAS' in self.clouds:
-            self.clouds['RAS'].unplot()
-        RAS = AxisView(ct,self.config,callback)
-        self.clouds['RAS'] = RAS
-        self.clouds['RAS'].plot()
+        self.RAS = AxisView(ct,self.config,callback)
+        self.RAS.plot()
 
     def remove_cloud(self, label):
         self.clouds[label].unplot()
@@ -1002,21 +1010,24 @@ class AxisView(CloudView):
         self._plots = []
 
     def plot(self):
-        self._plots = []
         coords = self.ct._points.coordinates
         center = np.array([0.5*(coords[:,i].max() + coords[:,i].min()) for i in range(3)])
         u,v,w,t = self.ct.affine.T
         max_dist = np.abs(coords-center).max()
 
-        for i,(axis,name) in enumerate(zip((u,v,w),('R','A','S'))):
-            location  = center.copy()
-            location[i] += max_dist*1.25 * np.sign(axis[i])
-            color = [0.,0.,0.]
-            color[i] = 1.
-            letter = mlab.text3d(location[0], location[1], location[2], name, color=tuple(color), scale=self.scale,
-                                 opacity=0.75,
-                                 )
-            self._plots.append(letter)
+        for i,(axis,name_pair) in enumerate(zip((u,v,w),(('R','L'),('A','P'),('S','I')))):
+            for name in name_pair:
+                location  = center.copy()
+                if name is name_pair[0]:
+                    location[i] += max_dist*1.25 * np.sign(axis[i])
+                else:
+                    location[i] -= max_dist * 1.25 * np.sign(axis[i])
+                color = [0.,0.,0.]
+                color[i] = 1.
+                letter = mlab.text3d(location[0], location[1], location[2], name, color=tuple(color), scale=self.scale,
+                                     opacity=0.75,
+                                     )
+                self._plots.append(letter)
 
     def contains(self, picker):
         return False
@@ -1024,10 +1035,18 @@ class AxisView(CloudView):
     def update(self):
         return
 
+    def hide(self):
+        for plot in self._plots:
+            plot.visible=False
+
+    def show(self):
+        for plot in self._plots:
+            plot.visible = True
+
     def unplot(self):
         for plot in self._plots:
             plot.remove()
-
+        self._plots = []
 
 
 
