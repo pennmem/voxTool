@@ -474,6 +474,7 @@ class Lead(object):
         self.last_contact = contact
 
     def add_macro(self, point_mask, contact_label, lead_location, lead_group):
+        assert not np.isnan(point_mask.get_center()).any()
         contact = Contact(point_mask, contact_label, lead_location, lead_group)
         if contact_label in self.contacts:
             self.remove_contact(contact_label)
