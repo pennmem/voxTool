@@ -434,8 +434,9 @@ class Lead(object):
 
     def make_micro_contacts(self):
         # All this only works for depth electrodes
-        contact_1 = self.contacts.values()[0]
-        contact_n = self.contacts.values()[1]
+        sorted_contacts = [self.contacts[c] for c in sorted(self.contacts.keys())]
+        contact_1 = sorted_contacts[0]
+        contact_n = sorted_contacts[1]
         lead_unit_vector = (contact_n.center - contact_1.center)
         # Micro-contact positions are in relative units from the center of the last contact
         micro_nums = iter(xrange(1,1+sum(self.micros['numbering'])))
