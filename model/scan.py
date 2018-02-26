@@ -7,6 +7,12 @@ import json
 import interpolator
 import re
 
+# added by Joel
+import scipy.spatial.distance
+from scipy.ndimage.measurements import label
+from scipy.stats.mstats import mode
+#
+
 log = logging.getLogger()
 
 
@@ -546,7 +552,15 @@ class CT(object):
         self.filename = img_file
         log.debug("Loading {}".format(img_file))
         img = nib.load(self.filename)
-        self.data = img.get_data().squeeze()
+        
+        #Changes CT scan resolution to account for slice thickness, effectively sets z dimension to equal x and y.
+        #On saving and loading, then uses self.img_zoom to put coordinates in native resolution.
+        #Coordinates in the contact list are still given in the resized resolution.
+        img_shape =  np.array(img.get_data().shape)
+        self.img_zoom = np.reciprocal(1.0*img_shape)*np.max(img_shape)
+        self.data = scipy.ndimage.zoom(img.get_data().squeeze(), self.img_zoom)        
+        #self.data = img.get_data().squeeze()
+        
         self.brainmask = np.zeros(img.get_data().shape, bool)
         self.affine = img.affine[:3,:]
 
@@ -581,14 +595,14 @@ class CT(object):
                     lead_loc=contact.lead_location,
                     coordinate_spaces=dict(
                         ct_voxel=dict(
-                            raw=list(contact.center.astype(int))
+                            raw=list(np.divide(contact.center,self.img_zoom).astype(int))
                         )
                     )
                 ))
             if include_bipolar:
                 pairs = [{'atlases':{},
                           'info':{},
-                          'coordinate_spaces':{'ct_voxel':{'raw':list((0.5*(c1.center+c2.center)).astype(int))}},
+                          'coordinate_spaces':{'ct_voxel':{'raw':list(np.divide(0.5*(c1.center+c2.center),self.img_zoom).astype(int))}},
                           'names':(lead.label+c1.label,lead.label+c2.label) }
                          for (c1, c2) in self.calculate_pairs(lead)]
             else:
@@ -618,6 +632,7 @@ class CT(object):
             dims = lead.dimensions
             for contact in sorted(lead.contacts.keys(),cmp=lambda x,y: cmp(int(x),int(y))):
                 voxel = np.rint(lead.contacts[contact].center)
+                voxel = np.divide(voxel,self.img_zoom).astype(int)
                 contact_name = lead.label+contact
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]
@@ -626,6 +641,7 @@ class CT(object):
                 pairs = self.calculate_pairs(lead)
                 for pair in pairs:
                     voxel = np.rint((pair[0].center+pair[1].center)/2)
+                    voxel = np.divide(voxel,self.img_zoom).astype(int)
                     pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
                     csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                         pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
@@ -668,7 +684,7 @@ class CT(object):
         self.set_leads(labels, types, dimensions, radii, spacings)
         for i, lead_label in enumerate(labels):
             for contact in leads[lead_label]['contacts']:
-                coordinates = contact['coordinate_spaces']['ct_voxel']['raw']
+                coordinates = np.multiply(contact['coordinate_spaces']['ct_voxel']['raw'],self.img_zoom)
                 point_mask = PointMask.proximity_mask(self._points, coordinates, radii[i])
                 group = contact['lead_group']
                 loc = contact['lead_loc']
