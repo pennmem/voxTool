@@ -595,14 +595,14 @@ class CT(object):
                     lead_loc=contact.lead_location,
                     coordinate_spaces=dict(
                         ct_voxel=dict(
-                            raw=list(np.divide(contact.center,self.img_zoom).astype(int))
+                            raw=list(np.rint(np.divide(contact.center,self.img_zoom)))
                         )
                     )
                 ))
             if include_bipolar:
                 pairs = [{'atlases':{},
                           'info':{},
-                          'coordinate_spaces':{'ct_voxel':{'raw':list(np.divide(0.5*(c1.center+c2.center),self.img_zoom).astype(int))}},
+                          'coordinate_spaces':{'ct_voxel':{'raw':list(np.rint(np.divide(0.5*(c1.center+c2.center),self.img_zoom)))}},
                           'names':(lead.label+c1.label,lead.label+c2.label) }
                          for (c1, c2) in self.calculate_pairs(lead)]
             else:
@@ -631,8 +631,7 @@ class CT(object):
             ltype = lead.type_
             dims = lead.dimensions
             for contact in sorted(lead.contacts.keys(),cmp=lambda x,y: cmp(int(x),int(y))):
-                voxel = np.rint(lead.contacts[contact].center)
-                voxel = np.divide(voxel,self.img_zoom).astype(int)
+                voxel = np.rint(np.divide(lead.contacts[contact].center,self.img_zoom))
                 contact_name = lead.label+contact
                 csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                     contact_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1]
@@ -640,8 +639,7 @@ class CT(object):
             if include_bipolar:
                 pairs = self.calculate_pairs(lead)
                 for pair in pairs:
-                    voxel = np.rint((pair[0].center+pair[1].center)/2)
-                    voxel = np.divide(voxel,self.img_zoom).astype(int)
+                    voxel = np.rint(np.divide((pair[0].center+pair[1].center)/2,self.img_zoom))
                     pair_name = '{lead.label}{pair[0].label}-{lead.label}{pair[1].label}'.format(lead=lead,pair=pair)
                     csv_out += "%s\t%s\t%s\t%s\t%s\t%s %s\n"%(
                         pair_name,voxel[0],voxel[1],voxel[2],ltype,dims[0],dims[1])
