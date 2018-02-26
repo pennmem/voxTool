@@ -287,6 +287,7 @@ class PylocControl(object):
             if not self.confirm("Dimensions {} are outside of lead dimensions {}. "
                                 "Are you sure you want to continue?".format(lead_location, lead.dimensions)):
                 return
+            
         self.ct.add_selection_to_lead(lead_label, contact_label, lead_location, self.lead_group)
         self.view.contact_panel.set_chosen_leads(self.ct.get_leads())
         self.ct.clear_selection()
@@ -990,7 +991,6 @@ class CloudView(object):
                                    vmax=1, vmin=0,
                                    scale_mode='none', scale_factor=1)
         self._plot.mlab_source.set(scalars=self.get_colors(labels, x, y, z))
-        self._plot.glyph.scale_mode = 'scale_by_vector'
 
     def unplot(self):
         self._plot.mlab_source.reset(x=[], y=[], z=[], scalars=[])
