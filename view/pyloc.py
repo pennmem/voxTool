@@ -985,15 +985,12 @@ class CloudView(object):
         labels, x, y, z = self.ct.xyz(self.label)
         self._plot = mlab.points3d(x, y, z,  # self.get_colors(labels, x, y, z),
                                    mode='cube', resolution=3,
-                                   #extent = [0,512,0,512,0,512],
                                    colormap=self.colormap,
                                    opacity=.5,
                                    vmax=1, vmin=0,
                                    scale_mode='none', scale_factor=1)
         self._plot.mlab_source.set(scalars=self.get_colors(labels, x, y, z))
         self._plot.glyph.scale_mode = 'scale_by_vector'
-        #self._plot.mlab_source.dataset.point_data.vectors = np.tile( np.random.random((5000,)), (3,1))
-        #self._plot.mlab_source.dataset.point_data.vectors = np.random.random((5000,))
 
     def unplot(self):
         self._plot.mlab_source.reset(x=[], y=[], z=[], scalars=[])
