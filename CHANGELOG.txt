@@ -1,4 +1,10 @@
-** UPCOMING **
+** 6/1/18 **
+Bug Fixes
+---------
+- Lead dimensions are now n_rows by n_columns, where electrodes are
+  numbered along rows.
+
+** 1/30/18 **
 - Added labelled RAS axes at center of brain
 - Changed "selected" color to hot pink
 - When selected point is in a localized contact, the appropriate entry in the contacts menu is highlighted
