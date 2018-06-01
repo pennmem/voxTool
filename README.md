@@ -28,10 +28,7 @@
 1. If continuing a previous localization: load the existing coordinates
    from a JSON coordinate file using the ```Load Coordinates``` button.
 2. Press ```Define leads``` to set the names, shapes, types, and microcontacts
-   for each implanted lead.
-   Note that the first dimension in a lead is assumed to change fastest;
-   so, for example, a 4x8 grid will have contact 1 next to contact 5,
-   while an 8x4 grid will have contact 1 next to contact 8.
+   for each implanted lead. Shapes are rows x columns.
 3. Select the lead you wish to localize in the dropdown menu labeled ```Label```
    in the upper left corner
 4. Click on the CT to highlight the next contact on that lead, then press
