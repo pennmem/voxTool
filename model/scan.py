@@ -280,10 +280,10 @@ class Lead(object):
 
         next_label = last_label.replace(str(last_num), str(last_num+1))
 
-        if last_locs[0] >= self.dimensions[0]:
-            next_locs = 1, last_locs[1]+1
+        if last_locs[1] >= self.dimensions[1]:
+            next_locs = last_locs[0]+1, 1
         else:
-            next_locs = last_locs[0]+1, last_locs[1]
+            next_locs = last_locs[0], last_locs[1]+1
 
         return next_label, next_locs, last_contact.lead_group
 
