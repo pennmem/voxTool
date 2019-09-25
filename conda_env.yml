@@ -1,4 +1,4 @@
-name: vt
+name: voxToolv2
 channels: !!python/tuple
 - !!python/unicode
   'defaults'
