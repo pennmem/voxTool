@@ -1,3 +1,8 @@
+** 8/12/2021 **
+Bug Fixes
+---------
+- Changed filebrowser filter syntax for loading new CT scans. *.nii.gz appeared to break things for newer macOS (10.15+) systems.
+
 ** 6/1/18 **
 Bug Fixes
 ---------
