@@ -132,7 +132,7 @@ class PylocControl(object):
         Callback for "Load Scan" button. See :load_ct:
         :return:
         """
-        file_ = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*.img *.nii.gz *.nii)')
+        file_ = QtGui.QFileDialog().getOpenFileName(None, 'Select Scan', '.', '(*)')
         if file_:
             self.load_ct(filename=file_)
             self.view.task_bar.define_leads_button.setEnabled(True)
