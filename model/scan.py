@@ -4,7 +4,7 @@ from traits.api import HasTraits , CArray, Instance,on_trait_change
 from collections import OrderedDict
 import logging
 import json
-import interpolator
+from . import interpolator
 import re
 
 log = logging.getLogger()
