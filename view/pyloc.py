@@ -4,7 +4,7 @@ os.environ['ETS_TOOLKIT'] = 'qt4'
 
 from pyface.qt import QtGui, QtCore
 from model.scan import CT
-from slice_viewer import SliceViewWidget
+from .slice_viewer import SliceViewWidget
 from mayavi.core.ui.api import MayaviScene, MlabSceneModel, \
     SceneEditor
 from mayavi import mlab
