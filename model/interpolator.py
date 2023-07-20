@@ -157,7 +157,7 @@ def interpol_grid_helper(coor1, coor1_coord, coor2, coor2_coord, coor3, coor3_co
         res_y = np.dot(rotation_matrix(axis, np.pi - theta_y), coor3)
     else:
         res_y = np.dot(rotation_matrix(axis, theta_y), coor3)
-    print res_y
+    print (res_y)
     if (x31[1]):
         res_y = res_y / x31[1]
     else:
