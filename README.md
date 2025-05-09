@@ -3,10 +3,15 @@
 
 ## Setup
 
+- If you are on windows, you will need to set up WSL first (https://learn.microsoft.com/en-us/windows/wsl/install)
+   1. Open powershell
+   1. Run ```wsl --install```
+   1. Restart your machine
+   1. Open wsl
 - Clone the repository from GitHub
-- Create a Conda environment from the definition file
+- Run the setup_env.sh file
   ```
-  conda env create -f conda_env.yml
+  ./setup_env.sh
   ```
   This creates an environment named `vt` in which to run voxTool.
 
@@ -14,7 +19,7 @@
 
 - Activate the conda environment:
   ```
-  source activate vt
+  conda activate vt
   ```
 - Launch the program:
   ```
