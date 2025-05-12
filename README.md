@@ -9,6 +9,10 @@
    1. Restart your machine
    1. Open wsl
 - Clone the repository from GitHub
+- Make the setup script executable
+  ```
+  chmod +x setup_env.sh
+  ```
 - Run the setup_env.sh file
   ```
   ./setup_env.sh
